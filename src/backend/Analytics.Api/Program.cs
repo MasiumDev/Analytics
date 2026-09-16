@@ -2,6 +2,9 @@ using Analytics.Api.Configuration;
 using Analytics.Api.Data;
 using Analytics.Api.Health;
 using Analytics.Api.Identity;
+using Analytics.Api.InstagramAccounts;
+using Analytics.Api.InstagramAccounts.Application;
+using Analytics.Api.InstagramAccounts.Infrastructure;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
@@ -11,6 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddApplicationConfiguration(builder.Configuration);
 builder.Services.AddApplicationDatabase(builder.Configuration);
 builder.Services.AddIdentityFoundation(builder.Configuration, builder.Environment);
+builder.Services.AddScoped<IInstagramAccountRepository, EfInstagramAccountRepository>();
+builder.Services.AddScoped<IInstagramAccountService, InstagramAccountService>();
 builder.Services.AddProblemDetails(options =>
 {
     options.CustomizeProblemDetails = context =>
@@ -58,6 +63,7 @@ app.MapGet("/api/auth/validate", () => Results.NoContent())
     .RequireAuthorization()
     .WithName("ValidateAuthentication");
 app.MapAuthenticationEndpoints();
+app.MapInstagramAccountEndpoints();
 
 app.Run();
 

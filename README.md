@@ -10,6 +10,8 @@ branding, locale, time, and secret-provider conventions are documented in
 [`docs/configuration.md`](docs/configuration.md).
 The cookie-based account contract is documented in
 [`docs/api/authentication.md`](docs/api/authentication.md).
+The tenant ownership contract for connected Instagram accounts is documented in
+[`docs/api/instagram-accounts.md`](docs/api/instagram-accounts.md).
 
 ## Repository structure
 
