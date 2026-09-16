@@ -2,6 +2,8 @@ using Analytics.Api.Identity;
 using Analytics.Api.InstagramAccounts.Domain;
 using Analytics.Api.InstagramCredentials.Domain;
 using Analytics.Api.InstagramIntegration.Domain;
+using Analytics.Api.InstagramMedia.Domain;
+using InstagramMediaEntity = Analytics.Api.InstagramMedia.Domain.InstagramMedia;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +18,12 @@ public sealed class AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opti
     public DbSet<InstagramCredential> InstagramCredentials => Set<InstagramCredential>();
 
     public DbSet<InstagramOAuthState> InstagramOAuthStates => Set<InstagramOAuthState>();
+
+    public DbSet<InstagramMediaEntity> InstagramMedia => Set<InstagramMediaEntity>();
+
+    public DbSet<MediaCurrentStats> MediaCurrentStats => Set<MediaCurrentStats>();
+
+    public DbSet<AccountCurrentStats> AccountCurrentStats => Set<AccountCurrentStats>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -68,6 +76,50 @@ public sealed class AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opti
             oauthState.HasOne(item => item.Owner)
                 .WithMany()
                 .HasForeignKey(item => item.OwnerUserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<InstagramMediaEntity>(media =>
+        {
+            media.ToTable("InstagramMedia");
+            media.HasKey(item => item.Id);
+            media.Property(item => item.InstagramMediaId).HasMaxLength(64).IsRequired();
+            media.Property(item => item.MediaType)
+                .HasConversion<string>()
+                .HasMaxLength(32)
+                .IsRequired();
+            media.Property(item => item.Permalink).HasMaxLength(2048).IsRequired();
+            media.Property(item => item.Caption).HasMaxLength(2200);
+            media.Property(item => item.RowVersion).IsRowVersion();
+            media.HasIndex(item => new { item.InstagramAccountId, item.InstagramMediaId })
+                .IsUnique();
+            media.HasIndex(item => new { item.InstagramAccountId, item.PublishedAtUtc })
+                .IsDescending(false, true);
+            media.HasOne(item => item.InstagramAccount)
+                .WithMany()
+                .HasForeignKey(item => item.InstagramAccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<MediaCurrentStats>(stats =>
+        {
+            stats.ToTable("MediaCurrentStats");
+            stats.HasKey(item => item.InstagramMediaId);
+            stats.Property(item => item.RowVersion).IsRowVersion();
+            stats.HasOne(item => item.InstagramMedia)
+                .WithOne(media => media.CurrentStats)
+                .HasForeignKey<MediaCurrentStats>(item => item.InstagramMediaId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<AccountCurrentStats>(stats =>
+        {
+            stats.ToTable("AccountCurrentStats");
+            stats.HasKey(item => item.InstagramAccountId);
+            stats.Property(item => item.RowVersion).IsRowVersion();
+            stats.HasOne(item => item.InstagramAccount)
+                .WithOne()
+                .HasForeignKey<AccountCurrentStats>(item => item.InstagramAccountId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

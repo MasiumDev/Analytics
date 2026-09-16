@@ -22,6 +22,8 @@ The one-time-state Instagram authorization-code flow is documented in
 [`docs/api/instagram-oauth.md`](docs/api/instagram-oauth.md).
 The typed Instagram API client, bounded pagination, retry, and error contract is
 documented in [`docs/api/instagram-client.md`](docs/api/instagram-client.md).
+The tenant-safe media catalog and current-stat projection schema is documented
+in [`docs/architecture/instagram-media-schema.md`](docs/architecture/instagram-media-schema.md).
 
 ## Repository structure
 
