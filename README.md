@@ -4,6 +4,11 @@ Internal workspace for the Instagram analytics product. The public product
 name is intentionally not encoded in namespaces or package names so it can be
 changed later.
 
+Architecture decisions are indexed in
+[`docs/architecture/README.md`](docs/architecture/README.md). Environment,
+branding, locale, time, and secret-provider conventions are documented in
+[`docs/configuration.md`](docs/configuration.md).
+
 ## Repository structure
 
 ```text
@@ -63,5 +68,7 @@ pnpm verify
 ```
 
 No application secret or Instagram token belongs in this repository. Local
-credentials will be configured through development secret providers in a later
-issue.
+credentials are supplied through development secret providers; staging and
+production use protected deployment variables or a managed secret store. Copy
+`apps/web/.env.example` to an ignored local environment file only for public,
+non-secret frontend configuration.
