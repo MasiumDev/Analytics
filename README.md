@@ -18,6 +18,8 @@ Meta app settings and the local User Secrets workflow are documented in
 [`docs/instagram-configuration.md`](docs/instagram-configuration.md).
 Encrypted connected-account credentials and key-ring operations are documented
 in [`docs/instagram-credential-storage.md`](docs/instagram-credential-storage.md).
+The one-time-state Instagram authorization-code flow is documented in
+[`docs/api/instagram-oauth.md`](docs/api/instagram-oauth.md).
 
 ## Repository structure
 

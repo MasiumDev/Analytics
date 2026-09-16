@@ -6,6 +6,8 @@ using Analytics.Api.InstagramAccounts;
 using Analytics.Api.InstagramAccounts.Application;
 using Analytics.Api.InstagramAccounts.Infrastructure;
 using Analytics.Api.InstagramIntegration;
+using Analytics.Api.InstagramIntegration.Application;
+using Analytics.Api.InstagramIntegration.Infrastructure;
 using Analytics.Api.InstagramCredentials.Application;
 using Analytics.Api.InstagramCredentials.Infrastructure;
 using Analytics.Api.Security;
@@ -27,6 +29,8 @@ builder.Services.AddScoped<IInstagramAccountRepository, EfInstagramAccountReposi
 builder.Services.AddScoped<IInstagramAccountService, InstagramAccountService>();
 builder.Services.AddScoped<IInstagramCredentialRepository, EfInstagramCredentialRepository>();
 builder.Services.AddScoped<IInstagramCredentialService, InstagramCredentialService>();
+builder.Services.AddScoped<IInstagramOAuthStateRepository, EfInstagramOAuthStateRepository>();
+builder.Services.AddScoped<IInstagramOAuthStateService, InstagramOAuthStateService>();
 builder.Services.AddProblemDetails(options =>
 {
     options.CustomizeProblemDetails = context =>
@@ -87,6 +91,7 @@ app.MapGet("/api/auth/validate", () => Results.NoContent())
     .WithName("ValidateAuthentication");
 app.MapAuthenticationEndpoints();
 app.MapInstagramAccountEndpoints();
+app.MapInstagramOAuthEndpoints();
 app.MapSecurityEndpoints();
 
 app.Run();

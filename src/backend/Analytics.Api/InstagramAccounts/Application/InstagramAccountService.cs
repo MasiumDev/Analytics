@@ -16,6 +16,15 @@ public sealed class InstagramAccountService(IInstagramAccountRepository reposito
         CancellationToken cancellationToken) =>
         repository.FindOwnedAsync(ownerUserId, accountId, cancellationToken);
 
+    public Task<InstagramAccount?> FindByInstagramUserIdAsync(
+        Guid ownerUserId,
+        string instagramUserId,
+        CancellationToken cancellationToken) =>
+        repository.FindOwnedByInstagramUserIdAsync(
+            ownerUserId,
+            instagramUserId,
+            cancellationToken);
+
     public async Task<CreateInstagramAccountResult> CreateAsync(
         Guid ownerUserId,
         string instagramUserId,

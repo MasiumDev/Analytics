@@ -1,6 +1,7 @@
 using Analytics.Api.Identity;
 using Analytics.Api.InstagramAccounts.Domain;
 using Analytics.Api.InstagramCredentials.Domain;
+using Analytics.Api.InstagramIntegration.Domain;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,8 @@ public sealed class AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opti
     public DbSet<InstagramAccount> InstagramAccounts => Set<InstagramAccount>();
 
     public DbSet<InstagramCredential> InstagramCredentials => Set<InstagramCredential>();
+
+    public DbSet<InstagramOAuthState> InstagramOAuthStates => Set<InstagramOAuthState>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -45,6 +48,20 @@ public sealed class AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opti
             credential.HasOne(item => item.InstagramAccount)
                 .WithOne(account => account.Credential)
                 .HasForeignKey<InstagramCredential>(item => item.InstagramAccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<InstagramOAuthState>(oauthState =>
+        {
+            oauthState.ToTable("InstagramOAuthStates");
+            oauthState.HasKey(item => item.Id);
+            oauthState.Property(item => item.StateHash).HasMaxLength(64).IsRequired();
+            oauthState.Property(item => item.RowVersion).IsRowVersion();
+            oauthState.HasIndex(item => item.StateHash).IsUnique();
+            oauthState.HasIndex(item => new { item.OwnerUserId, item.ExpiresAtUtc });
+            oauthState.HasOne(item => item.Owner)
+                .WithMany()
+                .HasForeignKey(item => item.OwnerUserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

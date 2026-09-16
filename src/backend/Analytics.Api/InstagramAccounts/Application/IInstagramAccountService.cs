@@ -13,6 +13,11 @@ public interface IInstagramAccountService
         Guid accountId,
         CancellationToken cancellationToken);
 
+    Task<InstagramAccount?> FindByInstagramUserIdAsync(
+        Guid ownerUserId,
+        string instagramUserId,
+        CancellationToken cancellationToken);
+
     Task<CreateInstagramAccountResult> CreateAsync(
         Guid ownerUserId,
         string instagramUserId,

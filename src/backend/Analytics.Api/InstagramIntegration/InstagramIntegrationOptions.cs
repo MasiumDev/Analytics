@@ -12,7 +12,15 @@ public sealed class InstagramIntegrationOptions
 
     public string? OAuthRedirectUri { get; init; }
 
-    public string GraphApiBaseUri { get; init; } = "https://graph.facebook.com";
+    public string AuthorizationEndpoint { get; init; } =
+        "https://www.instagram.com/oauth/authorize";
+
+    public string TokenEndpoint { get; init; } =
+        "https://api.instagram.com/oauth/access_token";
+
+    public string GraphApiBaseUri { get; init; } = "https://graph.instagram.com";
+
+    public TimeSpan StateLifetime { get; init; } = TimeSpan.FromMinutes(10);
 
     public string? DevelopmentAccessToken { get; init; }
 }

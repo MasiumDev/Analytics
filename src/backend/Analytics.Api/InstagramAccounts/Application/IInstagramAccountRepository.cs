@@ -13,6 +13,11 @@ public interface IInstagramAccountRepository
         Guid accountId,
         CancellationToken cancellationToken);
 
+    Task<InstagramAccount?> FindOwnedByInstagramUserIdAsync(
+        Guid ownerUserId,
+        string instagramUserId,
+        CancellationToken cancellationToken);
+
     Task<bool> IsConnectedAsync(
         string instagramUserId,
         CancellationToken cancellationToken);

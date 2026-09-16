@@ -25,6 +25,15 @@ public sealed class EfInstagramAccountRepository(AnalyticsDbContext database)
             account => account.Id == accountId && account.OwnerUserId == ownerUserId,
             cancellationToken);
 
+    public Task<InstagramAccount?> FindOwnedByInstagramUserIdAsync(
+        Guid ownerUserId,
+        string instagramUserId,
+        CancellationToken cancellationToken) =>
+        database.InstagramAccounts.SingleOrDefaultAsync(
+            account => account.OwnerUserId == ownerUserId
+                && account.InstagramUserId == instagramUserId,
+            cancellationToken);
+
     public Task<bool> IsConnectedAsync(
         string instagramUserId,
         CancellationToken cancellationToken) =>

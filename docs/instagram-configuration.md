@@ -44,7 +44,10 @@ on a command line.
 | `Instagram:AppId` | When enabled | Treat as private | Meta application identifier. |
 | `Instagram:AppSecret` | When enabled | Yes | Server-side only. |
 | `Instagram:OAuthRedirectUri` | When enabled | No | Absolute HTTPS callback URI registered in Meta. |
+| `Instagram:AuthorizationEndpoint` | Always | No | Defaults to Instagram's HTTPS authorization endpoint. |
+| `Instagram:TokenEndpoint` | Always | No | Defaults to Instagram's server-side code-exchange endpoint. |
 | `Instagram:GraphApiBaseUri` | Always | No | Safe default is committed. |
+| `Instagram:StateLifetime` | Always | No | Defaults to ten minutes; maximum one hour. |
 | `Instagram:DevelopmentAccessToken` | Never | Yes | Optional Development-only spike credential. |
 
 The development access token is configuration-only. No application service,
