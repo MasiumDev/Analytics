@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Options;
+using Analytics.Api.InstagramCredentials.Application;
+using Analytics.Api.InstagramCredentials.Infrastructure;
 using Analytics.Api.InstagramIntegration.Application;
 using Analytics.Api.InstagramIntegration.Infrastructure;
 
@@ -53,6 +55,12 @@ public static class InstagramIntegrationConfigurationExtensions
             });
         services
             .AddHttpClient<IInstagramAccountDiscoveryClient, InstagramAccountDiscoveryClient>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AllowAutoRedirect = false,
+            });
+        services
+            .AddHttpClient<IInstagramTokenLifecycleClient, InstagramTokenLifecycleClient>()
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
             {
                 AllowAutoRedirect = false,

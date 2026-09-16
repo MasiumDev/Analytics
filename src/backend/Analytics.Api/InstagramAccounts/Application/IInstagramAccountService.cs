@@ -39,6 +39,12 @@ public interface IInstagramAccountService
         string? displayName,
         InstagramProfessionalAccountType accountType,
         CancellationToken cancellationToken);
+
+    Task<InstagramAccount?> UpdateConnectionStatusAsync(
+        Guid ownerUserId,
+        Guid accountId,
+        InstagramConnectionStatus status,
+        CancellationToken cancellationToken);
 }
 
 public sealed record CreateInstagramAccountResult(

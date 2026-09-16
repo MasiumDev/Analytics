@@ -31,6 +31,9 @@ public sealed class AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opti
             account.Property(item => item.ProfessionalAccountType)
                 .HasConversion<string>()
                 .HasMaxLength(32);
+            account.Property(item => item.ConnectionStatus)
+                .HasConversion<string>()
+                .HasMaxLength(32);
             account.HasIndex(item => item.InstagramUserId).IsUnique();
             account.HasIndex(item => new { item.OwnerUserId, item.Username });
             account.HasOne(item => item.Owner)
@@ -43,7 +46,7 @@ public sealed class AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opti
         {
             credential.ToTable("InstagramCredentials");
             credential.HasKey(item => item.Id);
-            credential.Property(item => item.EncryptedAccessToken).IsRequired();
+            credential.Property(item => item.EncryptedAccessToken);
             credential.Property(item => item.GrantedScopes).HasMaxLength(2000).IsRequired();
             credential.Property(item => item.Status).HasConversion<string>().HasMaxLength(32);
             credential.Property(item => item.RowVersion).IsRowVersion();

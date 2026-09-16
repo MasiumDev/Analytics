@@ -48,3 +48,10 @@ versioned purpose isolates Instagram access tokens from session and antiforgery
 payloads even when they share the same provider. Unprotect returns a failure for
 malformed ciphertext or an unrelated key ring and never falls back to treating
 the stored value as plaintext.
+
+When an owner disconnects, the provider revoke is best-effort, but local
+revocation is unconditional: the encrypted token value is cleared, the
+credential becomes `Revoked`, and future dependent work is stopped. Expiry or
+provider revocation similarly changes the account to `ReconnectRequired`.
+Reconnect replaces the existing credential row with newly protected ciphertext
+instead of creating a duplicate.

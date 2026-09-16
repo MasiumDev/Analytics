@@ -29,6 +29,8 @@ builder.Services.AddScoped<IInstagramAccountRepository, EfInstagramAccountReposi
 builder.Services.AddScoped<IInstagramAccountService, InstagramAccountService>();
 builder.Services.AddScoped<IInstagramCredentialRepository, EfInstagramCredentialRepository>();
 builder.Services.AddScoped<IInstagramCredentialService, InstagramCredentialService>();
+builder.Services.AddScoped<IInstagramTokenLifecycleService, InstagramTokenLifecycleService>();
+builder.Services.AddSingleton<IInstagramDependentJobController, NoOpInstagramDependentJobController>();
 builder.Services.AddScoped<IInstagramOAuthStateRepository, EfInstagramOAuthStateRepository>();
 builder.Services.AddScoped<IInstagramOAuthStateService, InstagramOAuthStateService>();
 builder.Services.AddProblemDetails(options =>

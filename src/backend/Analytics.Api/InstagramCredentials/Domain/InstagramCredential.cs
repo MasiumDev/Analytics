@@ -26,7 +26,7 @@ public sealed class InstagramCredential
     public Guid InstagramAccountId { get; private init; }
 
     [JsonIgnore]
-    public string EncryptedAccessToken { get; private set; } = string.Empty;
+    public string? EncryptedAccessToken { get; private set; }
 
     public string GrantedScopes { get; private set; } = string.Empty;
 
@@ -68,8 +68,19 @@ public sealed class InstagramCredential
 
     public void Revoke(DateTimeOffset revokedAtUtc)
     {
+        EncryptedAccessToken = null;
         RevokedAtUtc = revokedAtUtc;
         Status = InstagramCredentialStatus.Revoked;
+    }
+
+    public void MarkExpired()
+    {
+        Status = InstagramCredentialStatus.Expired;
+    }
+
+    public void MarkInvalid()
+    {
+        Status = InstagramCredentialStatus.Invalid;
     }
 }
 

@@ -91,4 +91,38 @@ public sealed class InstagramAccountService(IInstagramAccountRepository reposito
         await repository.SaveChangesAsync(cancellationToken);
         return account;
     }
+
+    public async Task<InstagramAccount?> UpdateConnectionStatusAsync(
+        Guid ownerUserId,
+        Guid accountId,
+        InstagramConnectionStatus status,
+        CancellationToken cancellationToken)
+    {
+        var account = await repository.FindOwnedAsync(
+            ownerUserId,
+            accountId,
+            cancellationToken);
+        if (account is null)
+        {
+            return null;
+        }
+
+        switch (status)
+        {
+            case InstagramConnectionStatus.Connected:
+                account.MarkConnected();
+                break;
+            case InstagramConnectionStatus.ReconnectRequired:
+                account.RequireReconnect();
+                break;
+            case InstagramConnectionStatus.Disconnected:
+                account.Disconnect();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(status), status, null);
+        }
+
+        await repository.SaveChangesAsync(cancellationToken);
+        return account;
+    }
 }

@@ -92,10 +92,10 @@ public sealed class InstagramCredentialPersistenceTests
             Assert.NotEqual(accessToken, persisted.EncryptedAccessToken);
             Assert.DoesNotContain(
                 accessToken,
-                persisted.EncryptedAccessToken,
+                persisted.EncryptedAccessToken!,
                 StringComparison.Ordinal);
             Assert.True(protector.TryUnprotect(
-                persisted.EncryptedAccessToken,
+                persisted.EncryptedAccessToken!,
                 out var decrypted));
             Assert.Equal(accessToken, decrypted);
             Assert.NotEmpty(persisted.RowVersion);
@@ -103,7 +103,7 @@ public sealed class InstagramCredentialPersistenceTests
             var responseJson = JsonSerializer.Serialize(metadata);
             Assert.DoesNotContain(accessToken, responseJson, StringComparison.Ordinal);
             Assert.DoesNotContain(
-                persisted.EncryptedAccessToken,
+                persisted.EncryptedAccessToken!,
                 responseJson,
                 StringComparison.Ordinal);
 

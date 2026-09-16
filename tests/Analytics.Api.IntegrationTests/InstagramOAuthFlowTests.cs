@@ -71,7 +71,7 @@ public sealed class InstagramOAuthFlowTests
 
             Assert.NotEqual(TestAccessToken, credential.EncryptedAccessToken);
             Assert.True(protector.TryUnprotect(
-                credential.EncryptedAccessToken,
+                credential.EncryptedAccessToken!,
                 out var decrypted));
             Assert.Equal(TestAccessToken, decrypted);
             Assert.NotEqual(state, persistedState.StateHash);
@@ -158,6 +158,9 @@ public sealed class InstagramOAuthFlowTests
                 Assert.Equal(
                     InstagramProfessionalAccountType.Business,
                     account.ProfessionalAccountType);
+                Assert.Equal(
+                    InstagramConnectionStatus.Connected,
+                    account.ConnectionStatus);
                 Assert.Single(await database.InstagramCredentials.ToListAsync());
             }
 

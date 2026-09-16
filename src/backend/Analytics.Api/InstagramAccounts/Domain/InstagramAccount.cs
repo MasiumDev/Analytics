@@ -24,6 +24,7 @@ public sealed class InstagramAccount
         OwnerUserId = ownerUserId;
         InstagramUserId = RequiredValue(instagramUserId, nameof(instagramUserId));
         UpdateProfile(username, displayName);
+        ConnectionStatus = InstagramConnectionStatus.Pending;
         CreatedAtUtc = DateTimeOffset.UtcNow;
         UpdatedAtUtc = CreatedAtUtc;
     }
@@ -39,6 +40,8 @@ public sealed class InstagramAccount
     public string? DisplayName { get; private set; }
 
     public InstagramProfessionalAccountType? ProfessionalAccountType { get; private set; }
+
+    public InstagramConnectionStatus ConnectionStatus { get; private set; }
 
     public DateTimeOffset CreatedAtUtc { get; private init; }
 
@@ -73,6 +76,13 @@ public sealed class InstagramAccount
         ProfessionalAccountType = accountType;
     }
 
+    public void MarkConnected() => ConnectionStatus = InstagramConnectionStatus.Connected;
+
+    public void RequireReconnect() =>
+        ConnectionStatus = InstagramConnectionStatus.ReconnectRequired;
+
+    public void Disconnect() => ConnectionStatus = InstagramConnectionStatus.Disconnected;
+
     private static string RequiredValue(string value, string parameterName)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -88,4 +98,12 @@ public enum InstagramProfessionalAccountType
 {
     Business,
     Creator,
+}
+
+public enum InstagramConnectionStatus
+{
+    Pending,
+    Connected,
+    ReconnectRequired,
+    Disconnected,
 }

@@ -12,6 +12,10 @@ contract and are rate limited per authenticated user.
 - `GET /api/instagram-accounts/{id}` returns an owned account.
 - `POST /api/instagram-accounts` connects an account to the current user.
 - `PUT /api/instagram-accounts/{id}` updates an owned account profile.
+- `GET /api/instagram-accounts/{id}/connection` validates the stored token and
+  returns redacted connection health.
+- `POST /api/instagram-accounts/{id}/disconnect` revokes provider access when
+  possible, clears the local ciphertext, and stops dependent jobs.
 
 The API derives ownership from the authenticated session; clients never submit
 an owner user ID. Requests for an account owned by another user return `404` so
@@ -36,3 +40,16 @@ Problem Details with status `409`.
 OAuth discovery also records `professionalAccountType` as `Business` or
 `Creator`. This value remains null only for manually created or not-yet-
 discovered records.
+
+## Connection lifecycle
+
+Successful OAuth and reconnects set the account to `Connected`. An expired,
+revoked, invalid, undecryptable, or identity-mismatched credential changes it
+to `ReconnectRequired` and stops dependent jobs. Disconnect always removes the
+locally usable token and sets `Disconnected`, even if Instagram is temporarily
+unavailable while provider revocation is attempted. A disconnected account is
+not revalidated until the owner completes OAuth again.
+
+Provider validation and revocation send the token only in the HTTPS Bearer
+header. URLs, API responses, errors, and logs contain no token material.
+Requests for another user's account return `404` for both lifecycle endpoints.

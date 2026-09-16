@@ -54,6 +54,11 @@ The development access token is configuration-only. No application service,
 entity, migration, or database column persists it. Startup rejects this setting
 outside the Development environment.
 
+The current connection workflow intentionally does not bootstrap the database
+from this setting. Create or reconnect accounts through the OAuth endpoints; no
+manual SQL is required. Automated lifecycle and provider-contract tests use
+in-process test doubles and never require a real Instagram token.
+
 Startup logs only boolean diagnostics such as `AppSecretConfigured=True`.
 Credential values are never interpolated into logs or validation messages.
 Production values must come from protected deployment variables or a managed

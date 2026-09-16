@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Analytics.Api.InstagramAccounts.Application;
 using Analytics.Api.InstagramAccounts.Domain;
+using Analytics.Api.InstagramCredentials.Application;
 using Analytics.Api.Security;
 
 namespace Analytics.Api.InstagramAccounts;
@@ -23,8 +24,61 @@ public static class InstagramAccountEndpoints
             .RequireAntiforgery()
             .RequireRateLimiting(ApplicationSecurity.TenantMutationRateLimitPolicy)
             .WithName("UpdateInstagramAccount");
+        group.MapGet("/{accountId:guid}/connection", GetConnectionAsync)
+            .RequireRateLimiting(ApplicationSecurity.TenantMutationRateLimitPolicy)
+            .WithName("GetInstagramConnectionHealth");
+        group.MapPost("/{accountId:guid}/disconnect", DisconnectAsync)
+            .RequireAntiforgery()
+            .RequireRateLimiting(ApplicationSecurity.TenantMutationRateLimitPolicy)
+            .WithName("DisconnectInstagramAccount");
 
         return endpoints;
+    }
+
+    private static async Task<IResult> GetConnectionAsync(
+        Guid accountId,
+        ClaimsPrincipal principal,
+        IInstagramTokenLifecycleService lifecycleService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetOwnerId(principal, out var ownerUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        try
+        {
+            var health = await lifecycleService.ValidateAsync(
+                ownerUserId,
+                accountId,
+                cancellationToken);
+            return health is null ? Results.NotFound() : Results.Ok(health);
+        }
+        catch (InstagramTokenLifecycleException)
+        {
+            return Results.Problem(
+                statusCode: StatusCodes.Status502BadGateway,
+                title: "Instagram connection check failed",
+                detail: "Instagram could not validate the connection right now.");
+        }
+    }
+
+    private static async Task<IResult> DisconnectAsync(
+        Guid accountId,
+        ClaimsPrincipal principal,
+        IInstagramTokenLifecycleService lifecycleService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetOwnerId(principal, out var ownerUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await lifecycleService.DisconnectAsync(
+            ownerUserId,
+            accountId,
+            cancellationToken);
+        return result is null ? Results.NotFound() : Results.Ok(result);
     }
 
     private static async Task<IResult> ListAsync(
@@ -161,6 +215,7 @@ public static class InstagramAccountEndpoints
             account.Username,
             account.DisplayName,
             account.ProfessionalAccountType?.ToString(),
+            account.ConnectionStatus.ToString(),
             account.CreatedAtUtc,
             account.UpdatedAtUtc);
 }
@@ -180,5 +235,6 @@ public sealed record InstagramAccountResponse(
     string Username,
     string? DisplayName,
     string? ProfessionalAccountType,
+    string ConnectionStatus,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset UpdatedAtUtc);

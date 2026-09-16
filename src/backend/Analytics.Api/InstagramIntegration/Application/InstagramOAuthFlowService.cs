@@ -1,4 +1,5 @@
 using Analytics.Api.InstagramAccounts.Application;
+using Analytics.Api.InstagramAccounts.Domain;
 using Analytics.Api.InstagramCredentials.Application;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Options;
@@ -163,6 +164,12 @@ public sealed class InstagramOAuthFlowService(
         {
             return new(InstagramOAuthCompletionStatus.AccountAlreadyOwned);
         }
+
+        account = await accountService.UpdateConnectionStatusAsync(
+            ownerUserId,
+            account.Id,
+            InstagramConnectionStatus.Connected,
+            cancellationToken) ?? account;
 
         return new(
             InstagramOAuthCompletionStatus.Connected,
