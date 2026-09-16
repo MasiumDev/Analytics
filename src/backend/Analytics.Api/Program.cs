@@ -6,6 +6,8 @@ using Analytics.Api.InstagramAccounts;
 using Analytics.Api.InstagramAccounts.Application;
 using Analytics.Api.InstagramAccounts.Infrastructure;
 using Analytics.Api.InstagramIntegration;
+using Analytics.Api.InstagramCredentials.Application;
+using Analytics.Api.InstagramCredentials.Infrastructure;
 using Analytics.Api.Security;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -17,11 +19,14 @@ builder.Services.AddApplicationConfiguration(builder.Configuration);
 builder.Services.AddInstagramIntegrationConfiguration(
     builder.Configuration,
     builder.Environment);
+builder.Services.AddInstagramCredentialProtection(builder.Configuration);
 builder.Services.AddApplicationDatabase(builder.Configuration);
 builder.Services.AddIdentityFoundation(builder.Configuration, builder.Environment);
 builder.Services.AddApplicationSecurity(builder.Environment);
 builder.Services.AddScoped<IInstagramAccountRepository, EfInstagramAccountRepository>();
 builder.Services.AddScoped<IInstagramAccountService, InstagramAccountService>();
+builder.Services.AddScoped<IInstagramCredentialRepository, EfInstagramCredentialRepository>();
+builder.Services.AddScoped<IInstagramCredentialService, InstagramCredentialService>();
 builder.Services.AddProblemDetails(options =>
 {
     options.CustomizeProblemDetails = context =>

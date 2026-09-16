@@ -1,4 +1,5 @@
 using Analytics.Api.Identity;
+using Analytics.Api.InstagramCredentials.Domain;
 
 namespace Analytics.Api.InstagramAccounts.Domain;
 
@@ -42,6 +43,8 @@ public sealed class InstagramAccount
     public DateTimeOffset UpdatedAtUtc { get; private set; }
 
     public ApplicationUser Owner { get; private init; } = null!;
+
+    public InstagramCredential? Credential { get; private set; }
 
     public void UpdateProfile(string username, string? displayName)
     {
