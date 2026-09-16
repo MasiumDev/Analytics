@@ -23,13 +23,25 @@ tests/Analytics.Api.IntegrationTests/  Backend integration tests
 - .NET SDK 9.0.300 or a newer 9.0 patch
 - Node.js 20.9 or newer
 - pnpm 11.19.0
+- SQL Server LocalDB (installed with Visual Studio) or another SQL Server
 
 ## Install dependencies
 
 ```powershell
 dotnet restore Analytics.sln
+dotnet tool restore
 pnpm install
 ```
+
+Create or update the local database from the committed migrations:
+
+```powershell
+pnpm db:update
+```
+
+The committed development connection uses Windows authentication and does not
+contain credentials. Override `ConnectionStrings__ApplicationDatabase` outside
+Git for staging and production.
 
 ## Run locally
 
@@ -41,7 +53,8 @@ pnpm dev:web
 ```
 
 - API root: `http://localhost:5157/`
-- API health: `http://localhost:5157/health`
+- API liveness: `http://localhost:5157/health`
+- API readiness (including database): `http://localhost:5157/health/ready`
 - Web app: `http://localhost:3000/`
 
 The API development ports are defined in

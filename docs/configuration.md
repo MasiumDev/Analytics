@@ -23,7 +23,15 @@ Example safe overrides:
 Branding__ProductName=Example Product
 Localization__DefaultLocale=fa-IR
 Localization__DisplayTimeZone=Asia/Tehran
+ConnectionStrings__ApplicationDatabase=Server=sql.example;Database=Analytics;...
 ```
+
+The development settings contain a credential-free LocalDB connection string
+that uses Windows integrated authentication. It is safe to commit and creates
+`Analytics.Local` on the developer machine. Any connection string containing a
+password or production host name remains outside Git and overrides
+`ConnectionStrings__ApplicationDatabase` through the deployment environment or
+secret provider.
 
 ## Frontend provider hierarchy
 

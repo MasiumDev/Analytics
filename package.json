@@ -7,6 +7,8 @@
     "build": "pnpm run build:backend && pnpm run build:web",
     "build:backend": "dotnet build Analytics.sln --configuration Release",
     "build:web": "pnpm --dir apps/web build",
+    "db:script": "dotnet tool restore && dotnet tool run dotnet-ef migrations script --idempotent --project src/backend/Analytics.Api/Analytics.Api.csproj --startup-project src/backend/Analytics.Api/Analytics.Api.csproj",
+    "db:update": "dotnet tool restore && dotnet tool run dotnet-ef database update --project src/backend/Analytics.Api/Analytics.Api.csproj --startup-project src/backend/Analytics.Api/Analytics.Api.csproj",
     "dev:api": "dotnet run --project src/backend/Analytics.Api/Analytics.Api.csproj",
     "dev:web": "pnpm --dir apps/web dev",
     "lint": "pnpm --dir apps/web lint",
