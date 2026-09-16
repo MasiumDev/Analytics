@@ -31,6 +31,10 @@ public static class InstagramAccountEndpoints
             .RequireAntiforgery()
             .RequireRateLimiting(ApplicationSecurity.TenantMutationRateLimitPolicy)
             .WithName("DisconnectInstagramAccount");
+        group.MapPost("/{accountId:guid}/sync-profile", SynchronizeProfileAsync)
+            .RequireAntiforgery()
+            .RequireRateLimiting(ApplicationSecurity.TenantMutationRateLimitPolicy)
+            .WithName("SynchronizeInstagramAccountProfile");
 
         return endpoints;
     }
@@ -79,6 +83,44 @@ public static class InstagramAccountEndpoints
             accountId,
             cancellationToken);
         return result is null ? Results.NotFound() : Results.Ok(result);
+    }
+
+    private static async Task<IResult> SynchronizeProfileAsync(
+        Guid accountId,
+        ClaimsPrincipal principal,
+        IInstagramAccountProfileSyncService syncService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetOwnerId(principal, out var ownerUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await syncService.SynchronizeAsync(
+            ownerUserId,
+            accountId,
+            cancellationToken);
+        if (result is null)
+        {
+            return Results.NotFound();
+        }
+
+        return result.Status switch
+        {
+            InstagramProfileSyncStatus.Synced => Results.Ok(result.Account),
+            InstagramProfileSyncStatus.ReconnectRequired => Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Instagram reconnect required",
+                detail: "Reconnect this Instagram account and try again."),
+            InstagramProfileSyncStatus.RetryLater => Results.Problem(
+                statusCode: StatusCodes.Status503ServiceUnavailable,
+                title: "Instagram profile sync delayed",
+                detail: "Instagram is temporarily unavailable or rate limited. Try again later."),
+            _ => Results.Problem(
+                statusCode: StatusCodes.Status502BadGateway,
+                title: "Instagram profile sync failed",
+                detail: "Instagram returned an invalid profile response."),
+        };
     }
 
     private static async Task<IResult> ListAsync(
@@ -217,7 +259,8 @@ public static class InstagramAccountEndpoints
             account.ProfessionalAccountType?.ToString(),
             account.ConnectionStatus.ToString(),
             account.CreatedAtUtc,
-            account.UpdatedAtUtc);
+            account.UpdatedAtUtc,
+            account.LastSyncedAtUtc);
 }
 
 public sealed record InstagramAccountRequest(
@@ -237,4 +280,5 @@ public sealed record InstagramAccountResponse(
     string? ProfessionalAccountType,
     string ConnectionStatus,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset UpdatedAtUtc);
+    DateTimeOffset UpdatedAtUtc,
+    DateTimeOffset? LastSyncedAtUtc);

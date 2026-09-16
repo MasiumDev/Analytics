@@ -47,6 +47,8 @@ public sealed class InstagramAccount
 
     public DateTimeOffset UpdatedAtUtc { get; private set; }
 
+    public DateTimeOffset? LastSyncedAtUtc { get; private set; }
+
     public ApplicationUser Owner { get; private init; } = null!;
 
     public InstagramCredential? Credential { get; private set; }
@@ -77,6 +79,17 @@ public sealed class InstagramAccount
     }
 
     public void MarkConnected() => ConnectionStatus = InstagramConnectionStatus.Connected;
+
+    public void SynchronizeProfile(
+        string username,
+        string? displayName,
+        InstagramProfessionalAccountType accountType,
+        DateTimeOffset syncedAtUtc)
+    {
+        UpdateProfessionalProfile(username, displayName, accountType);
+        LastSyncedAtUtc = syncedAtUtc.ToUniversalTime();
+        MarkConnected();
+    }
 
     public void RequireReconnect() =>
         ConnectionStatus = InstagramConnectionStatus.ReconnectRequired;

@@ -10,6 +10,8 @@ using Analytics.Api.InstagramIntegration.Application;
 using Analytics.Api.InstagramIntegration.Infrastructure;
 using Analytics.Api.InstagramCredentials.Application;
 using Analytics.Api.InstagramCredentials.Infrastructure;
+using Analytics.Api.InstagramMedia.Application;
+using Analytics.Api.InstagramMedia.Infrastructure;
 using Analytics.Api.Security;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -31,6 +33,8 @@ builder.Services.AddScoped<IInstagramCredentialRepository, EfInstagramCredential
 builder.Services.AddScoped<IInstagramCredentialService, InstagramCredentialService>();
 builder.Services.AddScoped<IInstagramTokenLifecycleService, InstagramTokenLifecycleService>();
 builder.Services.AddSingleton<IInstagramDependentJobController, NoOpInstagramDependentJobController>();
+builder.Services.AddScoped<IInstagramAccountProfileSyncService, InstagramAccountProfileSyncService>();
+builder.Services.AddScoped<IAccountCurrentStatsRepository, EfAccountCurrentStatsRepository>();
 builder.Services.AddScoped<IInstagramOAuthStateRepository, EfInstagramOAuthStateRepository>();
 builder.Services.AddScoped<IInstagramOAuthStateService, InstagramOAuthStateService>();
 builder.Services.AddProblemDetails(options =>

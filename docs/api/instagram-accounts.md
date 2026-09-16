@@ -16,6 +16,8 @@ contract and are rate limited per authenticated user.
   returns redacted connection health.
 - `POST /api/instagram-accounts/{id}/disconnect` revokes provider access when
   possible, clears the local ciphertext, and stops dependent jobs.
+- `POST /api/instagram-accounts/{id}/sync-profile` refreshes owned profile
+  metadata and current account counters.
 
 The API derives ownership from the authenticated session; clients never submit
 an owner user ID. Requests for an account owned by another user return `404` so
@@ -53,3 +55,20 @@ not revalidated until the owner completes OAuth again.
 Provider validation and revocation send the token only in the HTTPS Bearer
 header. URLs, API responses, errors, and logs contain no token material.
 Requests for another user's account return `404` for both lifecycle endpoints.
+
+## Profile synchronization
+
+Profile sync reads the account identity, username, display name, professional
+account type, follower/follows counts, and media count through the typed
+server-side Instagram client. It verifies that the provider user ID still
+matches the owned account, then updates the account and its one-to-one
+`AccountCurrentStats` projection. Repeating the same sync updates those rows and
+never creates duplicates. Successful responses contain `lastSyncedAtUtc` and no
+credential material.
+
+An expired, missing, revoked, rejected, or undecryptable credential returns
+`409` with an actionable reconnect message, changes the connection state to
+`ReconnectRequired`, and stops dependent jobs. Temporary provider or rate-limit
+failures return `503` without changing a healthy connection; invalid provider
+profiles return `502`. Tenant ownership is checked before any provider request
+or database write.

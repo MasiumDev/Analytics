@@ -45,6 +45,15 @@ public interface IInstagramAccountService
         Guid accountId,
         InstagramConnectionStatus status,
         CancellationToken cancellationToken);
+
+    Task<InstagramAccount?> SynchronizeProfileAsync(
+        Guid ownerUserId,
+        Guid accountId,
+        string username,
+        string? displayName,
+        InstagramProfessionalAccountType accountType,
+        DateTimeOffset syncedAtUtc,
+        CancellationToken cancellationToken);
 }
 
 public sealed record CreateInstagramAccountResult(

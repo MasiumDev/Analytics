@@ -125,4 +125,31 @@ public sealed class InstagramAccountService(IInstagramAccountRepository reposito
         await repository.SaveChangesAsync(cancellationToken);
         return account;
     }
+
+    public async Task<InstagramAccount?> SynchronizeProfileAsync(
+        Guid ownerUserId,
+        Guid accountId,
+        string username,
+        string? displayName,
+        InstagramProfessionalAccountType accountType,
+        DateTimeOffset syncedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        var account = await repository.FindOwnedAsync(
+            ownerUserId,
+            accountId,
+            cancellationToken);
+        if (account is null)
+        {
+            return null;
+        }
+
+        account.SynchronizeProfile(
+            username,
+            displayName,
+            accountType,
+            syncedAtUtc);
+        await repository.SaveChangesAsync(cancellationToken);
+        return account;
+    }
 }
