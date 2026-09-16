@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_NOLOGO: "1"
+  NUGET_PACKAGES: ${{ github.workspace }}\.nuget\packages
+
+jobs:
+  quality:
+    name: Lint, test, and build
+    runs-on: windows-2025
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: "**/packages.lock.json"
+
+      - name: Set up pnpm and Node.js
+        uses: pnpm/setup@v2
+        with:
+          runtime: node@22
+          cache: true
+          require-lockfile: true
+
+      - name: Restore .NET dependencies
+        run: dotnet restore Analytics.sln --locked-mode
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Start SQL Server LocalDB
+        shell: pwsh
+        run: |
+          $instances = & sqllocaldb info
+          if ($instances -notcontains "MSSQLLocalDB") {
+            & sqllocaldb create MSSQLLocalDB
+          }
+          & sqllocaldb start MSSQLLocalDB
+
+      - name: Run repository quality gates
+        run: pnpm verify

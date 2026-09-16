@@ -80,6 +80,22 @@ Run lint, tests, and all production builds:
 pnpm verify
 ```
 
+## Continuous integration
+
+GitHub Actions runs the same `pnpm verify` quality gate for every pull request
+and every push to `main`. A failing lint, test, or build command fails the job.
+The workflow uses only credential-free LocalDB and public package feeds, so it
+does not require repository secrets.
+
+To reproduce the CI setup and checks locally:
+
+```powershell
+pnpm install --frozen-lockfile
+dotnet restore Analytics.sln --locked-mode
+dotnet tool restore
+pnpm verify
+```
+
 No application secret or Instagram token belongs in this repository. Local
 credentials are supplied through development secret providers; staging and
 production use protected deployment variables or a managed secret store. Copy
