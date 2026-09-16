@@ -57,6 +57,7 @@ app.MapHealthChecks("/health/ready", new HealthCheckOptions
 app.MapGet("/api/auth/validate", () => Results.NoContent())
     .RequireAuthorization()
     .WithName("ValidateAuthentication");
+app.MapAuthenticationEndpoints();
 
 app.Run();
 

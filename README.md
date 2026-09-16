@@ -8,6 +8,8 @@ Architecture decisions are indexed in
 [`docs/architecture/README.md`](docs/architecture/README.md). Environment,
 branding, locale, time, and secret-provider conventions are documented in
 [`docs/configuration.md`](docs/configuration.md).
+The cookie-based account contract is documented in
+[`docs/api/authentication.md`](docs/api/authentication.md).
 
 ## Repository structure
 
