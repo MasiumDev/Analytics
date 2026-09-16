@@ -160,6 +160,7 @@ public static class InstagramAccountEndpoints
             account.InstagramUserId,
             account.Username,
             account.DisplayName,
+            account.ProfessionalAccountType?.ToString(),
             account.CreatedAtUtc,
             account.UpdatedAtUtc);
 }
@@ -178,5 +179,6 @@ public sealed record InstagramAccountResponse(
     string InstagramUserId,
     string Username,
     string? DisplayName,
+    string? ProfessionalAccountType,
     DateTimeOffset CreatedAtUtc,
     DateTimeOffset UpdatedAtUtc);

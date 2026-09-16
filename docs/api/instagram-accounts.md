@@ -32,3 +32,7 @@ Create requests use this shape:
 Profile updates accept `username` and optional `displayName`. The owner and the
 Instagram user ID are immutable. A duplicate Instagram user ID returns RFC 9457
 Problem Details with status `409`.
+
+OAuth discovery also records `professionalAccountType` as `Business` or
+`Creator`. This value remains null only for manually created or not-yet-
+discovered records.

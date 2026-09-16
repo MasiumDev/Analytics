@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Analytics.Api.Data;
 using Analytics.Api.Identity;
+using Analytics.Api.InstagramAccounts.Domain;
 using Analytics.Api.InstagramCredentials.Application;
 using Analytics.Api.InstagramCredentials.Infrastructure;
 using Analytics.Api.InstagramIntegration.Application;
@@ -24,7 +25,7 @@ public sealed class InstagramOAuthFlowTests
     [Fact]
     public async Task SuccessfulCallback_StoresEncryptedCredentialWithoutBrowserSecrets()
     {
-        await WithMigratedApplication(async (application, client, oauthClient, _, _) =>
+        await WithMigratedApplication(async (application, client, oauthClient, _, _, _) =>
         {
             await RegisterAsync(client, "oauth-success@example.com");
 
@@ -50,7 +51,8 @@ public sealed class InstagramOAuthFlowTests
             Assert.Equal(HttpStatusCode.OK, callbackResponse.StatusCode);
             Assert.NotNull(connection);
             Assert.Equal("17841400000000000", connection.InstagramUserId);
-            Assert.Equal("17841400000000000", connection.Username);
+            Assert.Equal("connected_brand", connection.Username);
+            Assert.Equal("Business", connection.ProfessionalAccountType);
             Assert.Equal("valid-code", Assert.Single(oauthClient.ExchangedCodes));
             Assert.DoesNotContain(TestAccessToken, responseBody, StringComparison.Ordinal);
             Assert.DoesNotContain(TestAppSecret, responseBody, StringComparison.Ordinal);
@@ -85,7 +87,7 @@ public sealed class InstagramOAuthFlowTests
     [Fact]
     public async Task Callback_RejectsTamperingDenialExpiryAndMissingCode()
     {
-        await WithMigratedApplication(async (_application, client, oauthClient, time, _) =>
+        await WithMigratedApplication(async (_application, client, oauthClient, _, time, _) =>
         {
             await RegisterAsync(client, "oauth-errors@example.com");
 
@@ -120,6 +122,99 @@ public sealed class InstagramOAuthFlowTests
         });
     }
 
+    [Fact]
+    public async Task Discovery_ValidatesProfessionalAccountScopesAndTenantOwnership()
+    {
+        await WithMigratedApplication(async (
+            application,
+            client,
+            oauthClient,
+            discoveryClient,
+            _,
+            _) =>
+        {
+            await RegisterAsync(client, "first-owner@example.com");
+
+            var (_, firstState) = await StartConnectionAsync(client);
+            var firstConnect = await client.GetAsync(
+                $"/api/integrations/instagram/callback?code=first&state={Uri.EscapeDataString(firstState)}");
+            Assert.Equal(HttpStatusCode.OK, firstConnect.StatusCode);
+
+            var (_, reconnectState) = await StartConnectionAsync(client);
+            var reconnect = await client.GetAsync(
+                $"/api/integrations/instagram/callback?code=reconnect&state={Uri.EscapeDataString(reconnectState)}");
+            Assert.Equal(HttpStatusCode.OK, reconnect.StatusCode);
+
+            Guid originalOwnerId;
+            await using (var verificationScope = application.Services.CreateAsyncScope())
+            {
+                var database = verificationScope.ServiceProvider
+                    .GetRequiredService<AnalyticsDbContext>();
+                var account = await database.InstagramAccounts
+                    .AsNoTracking()
+                    .SingleAsync();
+                originalOwnerId = account.OwnerUserId;
+                Assert.Equal("connected_brand", account.Username);
+                Assert.Equal(
+                    InstagramProfessionalAccountType.Business,
+                    account.ProfessionalAccountType);
+                Assert.Single(await database.InstagramCredentials.ToListAsync());
+            }
+
+            Assert.Equal(
+                HttpStatusCode.NoContent,
+                (await client.PostWithCsrfAsync("/api/auth/logout")).StatusCode);
+            await RegisterAsync(client, "second-owner@example.com");
+
+            var (_, takeoverState) = await StartConnectionAsync(client);
+            var takeover = await client.GetAsync(
+                $"/api/integrations/instagram/callback?code=takeover&state={Uri.EscapeDataString(takeoverState)}");
+            Assert.Equal(HttpStatusCode.Conflict, takeover.StatusCode);
+
+            oauthClient.InstagramUserId = "17841400000000001";
+            discoveryClient.Account = new InstagramDiscoveredAccount(
+                oauthClient.InstagramUserId,
+                "personal_profile",
+                "Personal Profile",
+                ProfessionalAccountType: null,
+                GrantedScopes:
+                ["instagram_business_basic", "instagram_business_manage_insights"]);
+            var (_, personalState) = await StartConnectionAsync(client);
+            var personal = await client.GetAsync(
+                $"/api/integrations/instagram/callback?code=personal&state={Uri.EscapeDataString(personalState)}");
+            var personalBody = await personal.Content.ReadAsStringAsync();
+            Assert.Equal(HttpStatusCode.UnprocessableEntity, personal.StatusCode);
+            Assert.Contains("Business or Creator", personalBody, StringComparison.Ordinal);
+
+            oauthClient.InstagramUserId = "17841400000000002";
+            discoveryClient.Account = new InstagramDiscoveredAccount(
+                oauthClient.InstagramUserId,
+                "missing_scope",
+                "Missing Scope",
+                InstagramProfessionalAccountType.Creator,
+                ["instagram_business_basic"]);
+            var (_, missingScopeState) = await StartConnectionAsync(client);
+            var missingScope = await client.GetAsync(
+                $"/api/integrations/instagram/callback?code=missing-scope&state={Uri.EscapeDataString(missingScopeState)}");
+            var missingScopeBody = await missingScope.Content.ReadAsStringAsync();
+            Assert.Equal(HttpStatusCode.UnprocessableEntity, missingScope.StatusCode);
+            Assert.Contains(
+                "instagram_business_manage_insights",
+                missingScopeBody,
+                StringComparison.Ordinal);
+
+            await using var finalScope = application.Services.CreateAsyncScope();
+            var finalDatabase = finalScope.ServiceProvider
+                .GetRequiredService<AnalyticsDbContext>();
+            var persistedAccount = await finalDatabase.InstagramAccounts
+                .AsNoTracking()
+                .SingleAsync();
+            Assert.Equal(originalOwnerId, persistedAccount.OwnerUserId);
+            Assert.Equal("17841400000000000", persistedAccount.InstagramUserId);
+            Assert.Single(await finalDatabase.InstagramCredentials.ToListAsync());
+        });
+    }
+
     private static async Task<(HttpResponseMessage Response, string State)>
         StartConnectionAsync(HttpClient client)
     {
@@ -146,6 +241,7 @@ public sealed class InstagramOAuthFlowTests
             WebApplicationFactory<Program>,
             HttpClient,
             StubInstagramOAuthClient,
+            StubInstagramAccountDiscoveryClient,
             AdjustableTimeProvider,
             string,
             Task> test)
@@ -162,6 +258,7 @@ public sealed class InstagramOAuthFlowTests
         var time = new AdjustableTimeProvider(
             new DateTimeOffset(2026, 9, 17, 0, 0, 0, TimeSpan.Zero));
         var oauthClient = new StubInstagramOAuthClient(time);
+        var discoveryClient = new StubInstagramAccountDiscoveryClient();
 
         try
         {
@@ -184,8 +281,10 @@ public sealed class InstagramOAuthFlowTests
                     builder.ConfigureServices(services =>
                     {
                         services.RemoveAll<IInstagramOAuthClient>();
+                        services.RemoveAll<IInstagramAccountDiscoveryClient>();
                         services.RemoveAll<TimeProvider>();
                         services.AddSingleton<IInstagramOAuthClient>(oauthClient);
+                        services.AddSingleton<IInstagramAccountDiscoveryClient>(discoveryClient);
                         services.AddSingleton<TimeProvider>(time);
                     });
                 });
@@ -201,7 +300,13 @@ public sealed class InstagramOAuthFlowTests
                 AllowAutoRedirect = false,
                 BaseAddress = new Uri("https://api.example.com"),
             });
-            await test(application, client, oauthClient, time, connectionString);
+            await test(
+                application,
+                client,
+                oauthClient,
+                discoveryClient,
+                time,
+                connectionString);
         }
         finally
         {
@@ -219,6 +324,8 @@ public sealed class InstagramOAuthFlowTests
     {
         public List<string> ExchangedCodes { get; } = [];
 
+        public string InstagramUserId { get; set; } = "17841400000000000";
+
         public Task<InstagramOAuthToken> ExchangeCodeAsync(
             string authorizationCode,
             CancellationToken cancellationToken)
@@ -227,10 +334,29 @@ public sealed class InstagramOAuthFlowTests
             var issuedAt = time.GetUtcNow();
             return Task.FromResult(new InstagramOAuthToken(
                 TestAccessToken,
-                "17841400000000000",
+                InstagramUserId,
                 ["instagram_business_basic", "instagram_business_manage_insights"],
                 issuedAt,
                 issuedAt.AddHours(1)));
+        }
+    }
+
+    private sealed class StubInstagramAccountDiscoveryClient
+        : IInstagramAccountDiscoveryClient
+    {
+        public InstagramDiscoveredAccount Account { get; set; } = new(
+            "17841400000000000",
+            "connected_brand",
+            "Connected Brand",
+            InstagramProfessionalAccountType.Business,
+            ["instagram_business_basic", "instagram_business_manage_insights"]);
+
+        public Task<InstagramDiscoveredAccount> DiscoverAsync(
+            string accessToken,
+            CancellationToken cancellationToken)
+        {
+            Assert.Equal(TestAccessToken, accessToken);
+            return Task.FromResult(Account);
         }
     }
 

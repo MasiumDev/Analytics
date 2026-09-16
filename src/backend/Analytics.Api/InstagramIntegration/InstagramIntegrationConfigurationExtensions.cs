@@ -51,6 +51,12 @@ public static class InstagramIntegrationConfigurationExtensions
             {
                 AllowAutoRedirect = false,
             });
+        services
+            .AddHttpClient<IInstagramAccountDiscoveryClient, InstagramAccountDiscoveryClient>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AllowAutoRedirect = false,
+            });
         services.AddScoped<IInstagramOAuthFlowService, InstagramOAuthFlowService>();
 
         return services;

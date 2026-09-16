@@ -38,6 +38,8 @@ public sealed class InstagramAccount
 
     public string? DisplayName { get; private set; }
 
+    public InstagramProfessionalAccountType? ProfessionalAccountType { get; private set; }
+
     public DateTimeOffset CreatedAtUtc { get; private init; }
 
     public DateTimeOffset UpdatedAtUtc { get; private set; }
@@ -53,6 +55,24 @@ public sealed class InstagramAccount
         UpdatedAtUtc = DateTimeOffset.UtcNow;
     }
 
+    public void UpdateProfessionalProfile(
+        string username,
+        string? displayName,
+        InstagramProfessionalAccountType accountType)
+    {
+        if (accountType is not (
+                InstagramProfessionalAccountType.Business
+                or InstagramProfessionalAccountType.Creator))
+        {
+            throw new ArgumentException(
+                "A Business or Creator account type is required.",
+                nameof(accountType));
+        }
+
+        UpdateProfile(username, displayName);
+        ProfessionalAccountType = accountType;
+    }
+
     private static string RequiredValue(string value, string parameterName)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -62,4 +82,10 @@ public sealed class InstagramAccount
 
         return value.Trim();
     }
+}
+
+public enum InstagramProfessionalAccountType
+{
+    Business,
+    Creator,
 }

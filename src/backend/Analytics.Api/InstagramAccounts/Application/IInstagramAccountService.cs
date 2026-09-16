@@ -31,6 +31,14 @@ public interface IInstagramAccountService
         string username,
         string? displayName,
         CancellationToken cancellationToken);
+
+    Task<InstagramAccount?> UpdateProfessionalProfileAsync(
+        Guid ownerUserId,
+        Guid accountId,
+        string username,
+        string? displayName,
+        InstagramProfessionalAccountType accountType,
+        CancellationToken cancellationToken);
 }
 
 public sealed record CreateInstagramAccountResult(

@@ -74,6 +74,14 @@ public static class InstagramOAuthEndpoints
                 statusCode: StatusCodes.Status400BadRequest,
                 title: "Invalid Instagram callback",
                 detail: "The authorization callback did not include a code."),
+            InstagramOAuthCompletionStatus.UnsupportedAccount => Results.Problem(
+                statusCode: StatusCodes.Status422UnprocessableEntity,
+                title: "Professional Instagram account required",
+                detail: "Connect an Instagram Business or Creator account."),
+            InstagramOAuthCompletionStatus.MissingScopes => Results.Problem(
+                statusCode: StatusCodes.Status422UnprocessableEntity,
+                title: "Required Instagram permissions are missing",
+                detail: $"Grant these permissions and try again: {string.Join(", ", result.MissingScopes ?? [])}."),
             InstagramOAuthCompletionStatus.AccountAlreadyOwned => Results.Problem(
                 statusCode: StatusCodes.Status409Conflict,
                 title: "Instagram account already connected",

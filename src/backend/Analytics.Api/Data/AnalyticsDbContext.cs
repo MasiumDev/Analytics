@@ -28,6 +28,9 @@ public sealed class AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opti
             account.Property(item => item.InstagramUserId).HasMaxLength(64).IsRequired();
             account.Property(item => item.Username).HasMaxLength(64).IsRequired();
             account.Property(item => item.DisplayName).HasMaxLength(200);
+            account.Property(item => item.ProfessionalAccountType)
+                .HasConversion<string>()
+                .HasMaxLength(32);
             account.HasIndex(item => item.InstagramUserId).IsUnique();
             account.HasIndex(item => new { item.OwnerUserId, item.Username });
             account.HasOne(item => item.Owner)

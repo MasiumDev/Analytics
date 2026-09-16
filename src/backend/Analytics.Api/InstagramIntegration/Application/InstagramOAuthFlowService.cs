@@ -8,6 +8,7 @@ namespace Analytics.Api.InstagramIntegration.Application;
 public sealed class InstagramOAuthFlowService(
     IInstagramOAuthStateService stateService,
     IInstagramOAuthClient oauthClient,
+    IInstagramAccountDiscoveryClient discoveryClient,
     IInstagramAccountService accountService,
     IInstagramCredentialService credentialService,
     IOptions<InstagramIntegrationOptions> options) : IInstagramOAuthFlowService
@@ -84,17 +85,51 @@ public sealed class InstagramOAuthFlowService(
             return new(InstagramOAuthCompletionStatus.ProviderFailure);
         }
 
+        InstagramDiscoveredAccount discoveredAccount;
+        try
+        {
+            discoveredAccount = await discoveryClient.DiscoverAsync(
+                oauthToken.AccessToken,
+                cancellationToken);
+        }
+        catch (InstagramDiscoveryException)
+        {
+            return new(InstagramOAuthCompletionStatus.ProviderFailure);
+        }
+
+        if (!discoveredAccount.InstagramUserId.Equals(
+                oauthToken.InstagramUserId,
+                StringComparison.Ordinal))
+        {
+            return new(InstagramOAuthCompletionStatus.ProviderFailure);
+        }
+
+        if (discoveredAccount.ProfessionalAccountType is null)
+        {
+            return new(InstagramOAuthCompletionStatus.UnsupportedAccount);
+        }
+
+        var missingScopes = RequestedScopes
+            .Except(discoveredAccount.GrantedScopes, StringComparer.Ordinal)
+            .ToArray();
+        if (missingScopes.Length > 0)
+        {
+            return new(
+                InstagramOAuthCompletionStatus.MissingScopes,
+                MissingScopes: missingScopes);
+        }
+
         var account = await accountService.FindByInstagramUserIdAsync(
             ownerUserId,
-            oauthToken.InstagramUserId,
+            discoveredAccount.InstagramUserId,
             cancellationToken);
         if (account is null)
         {
             var created = await accountService.CreateAsync(
                 ownerUserId,
-                oauthToken.InstagramUserId,
-                oauthToken.InstagramUserId,
-                displayName: null,
+                discoveredAccount.InstagramUserId,
+                discoveredAccount.Username,
+                discoveredAccount.DisplayName,
                 cancellationToken: cancellationToken);
             if (created.AlreadyConnected)
             {
@@ -104,11 +139,23 @@ public sealed class InstagramOAuthFlowService(
             account = created.Account!;
         }
 
+        account = await accountService.UpdateProfessionalProfileAsync(
+            ownerUserId,
+            account.Id,
+            discoveredAccount.Username,
+            discoveredAccount.DisplayName,
+            discoveredAccount.ProfessionalAccountType.Value,
+            cancellationToken);
+        if (account is null)
+        {
+            return new(InstagramOAuthCompletionStatus.AccountAlreadyOwned);
+        }
+
         var credential = await credentialService.StoreOrReplaceAsync(
             ownerUserId,
             account.Id,
             oauthToken.AccessToken,
-            oauthToken.GrantedScopes,
+            discoveredAccount.GrantedScopes,
             oauthToken.IssuedAtUtc,
             oauthToken.ExpiresAtUtc,
             cancellationToken);
@@ -123,6 +170,7 @@ public sealed class InstagramOAuthFlowService(
                 account.Id,
                 account.InstagramUserId,
                 account.Username,
+                account.ProfessionalAccountType!.Value.ToString(),
                 credential.GrantedScopes,
                 credential.ExpiresAtUtc,
                 credential.Status));

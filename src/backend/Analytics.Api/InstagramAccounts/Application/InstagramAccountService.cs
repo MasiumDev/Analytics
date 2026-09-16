@@ -69,4 +69,26 @@ public sealed class InstagramAccountService(IInstagramAccountRepository reposito
         await repository.SaveChangesAsync(cancellationToken);
         return account;
     }
+
+    public async Task<InstagramAccount?> UpdateProfessionalProfileAsync(
+        Guid ownerUserId,
+        Guid accountId,
+        string username,
+        string? displayName,
+        InstagramProfessionalAccountType accountType,
+        CancellationToken cancellationToken)
+    {
+        var account = await repository.FindOwnedAsync(
+            ownerUserId,
+            accountId,
+            cancellationToken);
+        if (account is null)
+        {
+            return null;
+        }
+
+        account.UpdateProfessionalProfile(username, displayName, accountType);
+        await repository.SaveChangesAsync(cancellationToken);
+        return account;
+    }
 }
