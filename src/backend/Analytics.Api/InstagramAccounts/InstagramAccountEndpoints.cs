@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Analytics.Api.InstagramAccounts.Application;
 using Analytics.Api.InstagramAccounts.Domain;
+using Analytics.Api.Security;
 
 namespace Analytics.Api.InstagramAccounts;
 
@@ -10,12 +11,18 @@ public static class InstagramAccountEndpoints
         this IEndpointRouteBuilder endpoints)
     {
         var group = endpoints.MapGroup("/api/instagram-accounts")
-            .RequireAuthorization();
+            .RequireAuthorization(ApplicationSecurity.AuthenticatedUserPolicy);
 
         group.MapGet("/", ListAsync).WithName("ListInstagramAccounts");
         group.MapGet("/{accountId:guid}", GetAsync).WithName("GetInstagramAccount");
-        group.MapPost("/", CreateAsync).WithName("CreateInstagramAccount");
-        group.MapPut("/{accountId:guid}", UpdateAsync).WithName("UpdateInstagramAccount");
+        group.MapPost("/", CreateAsync)
+            .RequireAntiforgery()
+            .RequireRateLimiting(ApplicationSecurity.TenantMutationRateLimitPolicy)
+            .WithName("CreateInstagramAccount");
+        group.MapPut("/{accountId:guid}", UpdateAsync)
+            .RequireAntiforgery()
+            .RequireRateLimiting(ApplicationSecurity.TenantMutationRateLimitPolicy)
+            .WithName("UpdateInstagramAccount");
 
         return endpoints;
     }

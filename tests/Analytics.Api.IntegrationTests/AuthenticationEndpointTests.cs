@@ -27,7 +27,7 @@ public sealed class AuthenticationEndpointTests
             Assert.False(anonymousSession.IsAuthenticated);
             Assert.Null(anonymousSession.User);
 
-            var registerResponse = await client.PostAsJsonAsync(
+            var registerResponse = await client.PostAsJsonWithCsrfAsync(
                 "/api/auth/register",
                 new RegisterRequest(Email, Password));
             var registeredSession = await registerResponse.Content
@@ -42,7 +42,7 @@ public sealed class AuthenticationEndpointTests
                 .GetFromJsonAsync<AuthenticationStateResponse>("/api/auth/session");
             Assert.True(currentSession?.IsAuthenticated);
 
-            var logoutResponse = await client.PostAsync("/api/auth/logout", content: null);
+            var logoutResponse = await client.PostWithCsrfAsync("/api/auth/logout");
             Assert.Equal(HttpStatusCode.NoContent, logoutResponse.StatusCode);
 
             var loggedOutSession = await client
@@ -50,7 +50,7 @@ public sealed class AuthenticationEndpointTests
             Assert.NotNull(loggedOutSession);
             Assert.False(loggedOutSession.IsAuthenticated);
 
-            var failedLogin = await client.PostAsJsonAsync(
+            var failedLogin = await client.PostAsJsonWithCsrfAsync(
                 "/api/auth/login",
                 new LoginRequest(Email, "WrongPass123"));
             Assert.Equal(HttpStatusCode.Unauthorized, failedLogin.StatusCode);
@@ -58,7 +58,7 @@ public sealed class AuthenticationEndpointTests
                 "application/problem+json",
                 failedLogin.Content.Headers.ContentType?.MediaType);
 
-            var loginResponse = await client.PostAsJsonAsync(
+            var loginResponse = await client.PostAsJsonWithCsrfAsync(
                 "/api/auth/login",
                 new LoginRequest(Email, Password));
             Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
@@ -75,7 +75,7 @@ public sealed class AuthenticationEndpointTests
     {
         await WithMigratedApplication(async (_application, client) =>
         {
-            var invalidResponse = await client.PostAsJsonAsync(
+            var invalidResponse = await client.PostAsJsonWithCsrfAsync(
                 "/api/auth/register",
                 new RegisterRequest("not-an-email", string.Empty));
             var invalidProblem = await invalidResponse.Content.ReadFromJsonAsync<JsonElement>();
@@ -87,10 +87,10 @@ public sealed class AuthenticationEndpointTests
             Assert.True(invalidProblem.TryGetProperty("errors", out var errors));
             Assert.Equal(JsonValueKind.Object, errors.ValueKind);
 
-            var firstResponse = await client.PostAsJsonAsync(
+            var firstResponse = await client.PostAsJsonWithCsrfAsync(
                 "/api/auth/register",
                 new RegisterRequest(Email, Password));
-            var duplicateResponse = await client.PostAsJsonAsync(
+            var duplicateResponse = await client.PostAsJsonWithCsrfAsync(
                 "/api/auth/register",
                 new RegisterRequest(Email, Password));
 
@@ -107,18 +107,18 @@ public sealed class AuthenticationEndpointTests
     {
         await WithMigratedApplication(async (_application, client) =>
         {
-            var registerResponse = await client.PostAsJsonAsync(
+            var registerResponse = await client.PostAsJsonWithCsrfAsync(
                 "/api/auth/register",
                 new RegisterRequest(Email, Password));
             Assert.Equal(HttpStatusCode.Created, registerResponse.StatusCode);
 
-            await client.PostAsync("/api/auth/logout", content: null);
+            await client.PostWithCsrfAsync("/api/auth/logout");
 
             HttpResponseMessage? lastFailure = null;
             for (var attempt = 0; attempt < 5; attempt++)
             {
                 lastFailure?.Dispose();
-                lastFailure = await client.PostAsJsonAsync(
+                lastFailure = await client.PostAsJsonWithCsrfAsync(
                     "/api/auth/login",
                     new LoginRequest(Email, "WrongPass123"));
             }
@@ -129,7 +129,7 @@ public sealed class AuthenticationEndpointTests
                 Assert.Equal(HttpStatusCode.TooManyRequests, lastFailure.StatusCode);
             }
 
-            var correctPasswordWhileLocked = await client.PostAsJsonAsync(
+            var correctPasswordWhileLocked = await client.PostAsJsonWithCsrfAsync(
                 "/api/auth/login",
                 new LoginRequest(Email, Password));
             Assert.Equal(HttpStatusCode.TooManyRequests, correctPasswordWhileLocked.StatusCode);

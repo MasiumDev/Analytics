@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
+using Analytics.Api.Security;
 using Microsoft.AspNetCore.Identity;
 
 namespace Analytics.Api.Identity;
@@ -12,10 +13,17 @@ public static class AuthenticationEndpoints
         var group = endpoints.MapGroup("/api/auth");
 
         group.MapPost("/register", RegisterAsync)
+            .RequireAntiforgery()
+            .RequireRateLimiting(ApplicationSecurity.AuthenticationRateLimitPolicy)
             .WithName("RegisterUser");
         group.MapPost("/login", LoginAsync)
+            .RequireAntiforgery()
+            .RequireRateLimiting(ApplicationSecurity.AuthenticationRateLimitPolicy)
             .WithName("LoginUser");
         group.MapPost("/logout", LogoutAsync)
+            .RequireAuthorization(ApplicationSecurity.AuthenticatedUserPolicy)
+            .RequireAntiforgery()
+            .RequireRateLimiting(ApplicationSecurity.AuthenticationRateLimitPolicy)
             .WithName("LogoutUser");
         group.MapGet("/session", GetSessionAsync)
             .WithName("GetAuthenticationSession");

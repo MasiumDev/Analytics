@@ -13,6 +13,20 @@ credentials enabled.
 | `POST` | `/api/auth/logout` | `204` | Invalidate the current session cookie. |
 | `GET` | `/api/auth/session` | `200` | Return the current authenticated/anonymous state. |
 | `GET` | `/api/auth/validate` | `204` | Verify that the request has a valid session; otherwise `401`. |
+| `GET` | `/api/auth/csrf` | `200` | Issue a CSRF cookie and request token. |
+
+## CSRF flow
+
+Before every state-changing request, the browser client calls
+`GET /api/auth/csrf` with credentials enabled. The response contains a
+`requestToken` and `headerName`. The client sends that token in the named header
+on the immediately following `POST` or `PUT`; the HttpOnly CSRF cookie is sent
+automatically. Fetch a fresh token after login, registration, or logout because
+the authenticated identity changed.
+
+Requests without a matching cookie and header token return RFC 9457 Problem
+Details with status `400`. Authentication mutations are also limited to ten
+requests per client per minute and return `429` after the limit is exhausted.
 
 Register request:
 

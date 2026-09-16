@@ -54,11 +54,11 @@ public sealed class InstagramAccountOwnershipTests
                 (await bob.GetAsync($"/api/instagram-accounts/{aliceFirst.Id}")).StatusCode);
             Assert.Equal(
                 HttpStatusCode.NotFound,
-                (await bob.PutAsJsonAsync(
+                (await bob.PutAsJsonWithCsrfAsync(
                     $"/api/instagram-accounts/{aliceFirst.Id}",
                     new InstagramAccountProfileRequest("stolen_name"))).StatusCode);
 
-            var updateResponse = await alice.PutAsJsonAsync(
+            var updateResponse = await alice.PutAsJsonWithCsrfAsync(
                 $"/api/instagram-accounts/{aliceFirst.Id}",
                 new InstagramAccountProfileRequest("alice_updated", "Alice Brand"));
             var updated = await updateResponse.Content
@@ -92,7 +92,7 @@ public sealed class InstagramAccountOwnershipTests
             await RegisterAsync(secondOwner, "second@example.com");
             await CreateAccountAsync(firstOwner, "same-instagram-id", "first_handle");
 
-            var duplicate = await secondOwner.PostAsJsonAsync(
+            var duplicate = await secondOwner.PostAsJsonWithCsrfAsync(
                 "/api/instagram-accounts",
                 new InstagramAccountRequest("same-instagram-id", "other_handle"));
 
@@ -112,7 +112,7 @@ public sealed class InstagramAccountOwnershipTests
 
     private static async Task RegisterAsync(HttpClient client, string email)
     {
-        var response = await client.PostAsJsonAsync(
+        var response = await client.PostAsJsonWithCsrfAsync(
             "/api/auth/register",
             new RegisterRequest(email, Password));
 
@@ -124,7 +124,7 @@ public sealed class InstagramAccountOwnershipTests
         string instagramUserId,
         string username)
     {
-        var response = await client.PostAsJsonAsync(
+        var response = await client.PostAsJsonWithCsrfAsync(
             "/api/instagram-accounts",
             new InstagramAccountRequest(instagramUserId, username));
         var account = await response.Content.ReadFromJsonAsync<InstagramAccountResponse>();

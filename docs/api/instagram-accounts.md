@@ -4,7 +4,9 @@ Every Instagram account belongs to exactly one authenticated application user.
 The same user may own multiple Instagram accounts, while an Instagram user ID
 can only be connected once across the application.
 
-All endpoints below require the secure application session cookie:
+All endpoints below require the secure application session cookie. `POST` and
+`PUT` also require the CSRF cookie/header pair described in the authentication
+contract and are rate limited per authenticated user.
 
 - `GET /api/instagram-accounts` lists only the current user's accounts.
 - `GET /api/instagram-accounts/{id}` returns an owned account.
