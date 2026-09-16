@@ -24,6 +24,9 @@ Branding__ProductName=Example Product
 Localization__DefaultLocale=fa-IR
 Localization__DisplayTimeZone=Asia/Tehran
 ConnectionStrings__ApplicationDatabase=Server=sql.example;Database=Analytics;...
+Authentication__CookieName=analytics.session
+Authentication__Lifetime=08:00:00
+WebClient__AllowedOrigins__0=https://app.example.com
 ```
 
 The development settings contain a credential-free LocalDB connection string
@@ -32,6 +35,18 @@ that uses Windows integrated authentication. It is safe to commit and creates
 password or production host name remains outside Git and overrides
 `ConnectionStrings__ApplicationDatabase` through the deployment environment or
 secret provider.
+
+## Authentication and web client
+
+The API uses an HttpOnly Identity cookie with an eight-hour sliding lifetime.
+Production cookies are always Secure; local HTTP development uses the request
+scheme so the separate Next.js development server remains usable. API
+authentication challenges return 401/403 instead of browser redirects.
+
+Production defaults to a same-origin deployment and therefore has no CORS
+origins. Add only the exact HTTPS origins that host the web client through
+`WebClient__AllowedOrigins__N`. The configured policy permits credentials but
+never uses wildcard origins.
 
 ## Frontend provider hierarchy
 

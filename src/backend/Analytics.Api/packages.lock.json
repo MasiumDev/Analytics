@@ -2,6 +2,16 @@
   "version": 1,
   "dependencies": {
     "net9.0": {
+      "Microsoft.AspNetCore.Identity.EntityFrameworkCore": {
+        "type": "Direct",
+        "requested": "[9.0.20, )",
+        "resolved": "9.0.20",
+        "contentHash": "UIbrM2Adib8UmKvZPAinowwTEWYp+GnN6q/LLq7H9T/D5Jj8vryhWTQi+b4Sz/4s1tqsgpq9VaWKrNvDc3Oq/w==",
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore.Relational": "9.0.20",
+          "Microsoft.Extensions.Identity.Stores": "9.0.20"
+        }
+      },
       "Microsoft.EntityFrameworkCore.Design": {
         "type": "Direct",
         "requested": "[9.0.20, )",
@@ -81,6 +91,19 @@
         "type": "Transitive",
         "resolved": "2.14.1",
         "contentHash": "lQKvtaTDOXnoVJ20ibTuSIOf2i0uO0MPbDhd1jm238I+U/2ZnRENj0cktKZhtchBMtCUSRQ5v4xBCUbKNmyVMw=="
+      },
+      "Microsoft.AspNetCore.Cryptography.Internal": {
+        "type": "Transitive",
+        "resolved": "9.0.20",
+        "contentHash": "XSnsyfkS1U3GMrGHmJvtrj1VN8ZDG4TqP0GVjQGj1Yg9wgsJdO2smNotaOZfYx6CeyF3JPDXz+xOr3/4rEtbWA=="
+      },
+      "Microsoft.AspNetCore.Cryptography.KeyDerivation": {
+        "type": "Transitive",
+        "resolved": "9.0.20",
+        "contentHash": "h3KbzpWLrW7VO+m3q57PlJfrtJCqViSIYaICpbEuDSMrjqbHkeHq2gTkkS86vFrnmE0caov6jiCOXY2z3I0bjw==",
+        "dependencies": {
+          "Microsoft.AspNetCore.Cryptography.Internal": "9.0.20"
+        }
       },
       "Microsoft.Bcl.AsyncInterfaces": {
         "type": "Transitive",
@@ -307,6 +330,26 @@
           "Microsoft.Extensions.Diagnostics.Abstractions": "9.0.20",
           "Microsoft.Extensions.FileProviders.Abstractions": "9.0.20",
           "Microsoft.Extensions.Logging.Abstractions": "9.0.20"
+        }
+      },
+      "Microsoft.Extensions.Identity.Core": {
+        "type": "Transitive",
+        "resolved": "9.0.20",
+        "contentHash": "r5tDvloc/tZzwEOYMblA4zEBdIikpgm17z9VCdFrVuueX3km65PXKsmyTk95xtdCxomXz2fLf0BruyJD3rfJ2g==",
+        "dependencies": {
+          "Microsoft.AspNetCore.Cryptography.KeyDerivation": "9.0.20",
+          "Microsoft.Extensions.Logging": "9.0.20",
+          "Microsoft.Extensions.Options": "9.0.20"
+        }
+      },
+      "Microsoft.Extensions.Identity.Stores": {
+        "type": "Transitive",
+        "resolved": "9.0.20",
+        "contentHash": "AzjHWADY/iZImuQX2vzWVY9tFYEoA4UmXNMvPRrfmCCHiKcvOATfYSMa4Z8uDQ/VA7aR4SS3vR5yWUzhxACCzw==",
+        "dependencies": {
+          "Microsoft.Extensions.Caching.Abstractions": "9.0.20",
+          "Microsoft.Extensions.Identity.Core": "9.0.20",
+          "Microsoft.Extensions.Logging": "9.0.20"
         }
       },
       "Microsoft.Extensions.Logging": {
