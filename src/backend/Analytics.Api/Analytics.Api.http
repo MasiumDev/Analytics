@@ -1,0 +1,11 @@
+@Analytics.Api_HostAddress = http://localhost:5157
+
+GET {{Analytics.Api_HostAddress}}/
+Accept: application/json
+
+###
+
+GET {{Analytics.Api_HostAddress}}/health
+Accept: text/plain
+
+###
