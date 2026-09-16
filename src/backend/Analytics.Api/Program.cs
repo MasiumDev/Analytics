@@ -5,6 +5,7 @@ using Analytics.Api.Identity;
 using Analytics.Api.InstagramAccounts;
 using Analytics.Api.InstagramAccounts.Application;
 using Analytics.Api.InstagramAccounts.Infrastructure;
+using Analytics.Api.InstagramIntegration;
 using Analytics.Api.Security;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -13,6 +14,9 @@ using Microsoft.Extensions.Options;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddApplicationConfiguration(builder.Configuration);
+builder.Services.AddInstagramIntegrationConfiguration(
+    builder.Configuration,
+    builder.Environment);
 builder.Services.AddApplicationDatabase(builder.Configuration);
 builder.Services.AddIdentityFoundation(builder.Configuration, builder.Environment);
 builder.Services.AddApplicationSecurity(builder.Environment);
@@ -38,6 +42,16 @@ builder.Services
         tags: [HealthCheckTags.Ready]);
 
 var app = builder.Build();
+
+var instagramConfiguration = app.Services
+    .GetRequiredService<InstagramConfigurationDiagnostics>();
+app.Logger.LogInformation(
+    "Instagram integration configuration: Enabled={Enabled}, AppIdConfigured={AppIdConfigured}, AppSecretConfigured={AppSecretConfigured}, RedirectUriConfigured={RedirectUriConfigured}, DevelopmentAccessTokenConfigured={DevelopmentAccessTokenConfigured}",
+    instagramConfiguration.Enabled,
+    instagramConfiguration.AppIdConfigured,
+    instagramConfiguration.AppSecretConfigured,
+    instagramConfiguration.RedirectUriConfigured,
+    instagramConfiguration.DevelopmentAccessTokenConfigured);
 
 app.UseExceptionHandler();
 app.UseStatusCodePages();

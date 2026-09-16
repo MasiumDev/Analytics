@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>analytics-api-2d0fc4e9-7714-4a99-b345-42858826ae4b</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>

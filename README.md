@@ -14,6 +14,8 @@ The tenant ownership contract for connected Instagram accounts is documented in
 [`docs/api/instagram-accounts.md`](docs/api/instagram-accounts.md).
 The browser, transport, rate-limit, and tenant authorization baseline is in
 [`docs/security.md`](docs/security.md).
+Meta app settings and the local User Secrets workflow are documented in
+[`docs/instagram-configuration.md`](docs/instagram-configuration.md).
 
 ## Repository structure
 

@@ -29,6 +29,12 @@ Authentication__Lifetime=08:00:00
 WebClient__AllowedOrigins__0=https://app.example.com
 ```
 
+Instagram integration is disabled by default. When `Instagram__Enabled=true`,
+startup validation requires `AppId`, `AppSecret`, and an absolute HTTPS
+`OAuthRedirectUri`. Missing settings stop startup with a message that names only
+the configuration keys, never their values. See the
+[local Instagram configuration workflow](instagram-configuration.md).
+
 The development settings contain a credential-free LocalDB connection string
 that uses Windows integrated authentication. It is safe to commit and creates
 `Analytics.Local` on the developer machine. Any connection string containing a
