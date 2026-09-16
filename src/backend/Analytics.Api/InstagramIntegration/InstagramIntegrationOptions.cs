@@ -22,5 +22,13 @@ public sealed class InstagramIntegrationOptions
 
     public TimeSpan StateLifetime { get; init; } = TimeSpan.FromMinutes(10);
 
+    public TimeSpan ApiRequestTimeout { get; init; } = TimeSpan.FromSeconds(30);
+
+    public int ApiMaxAttempts { get; init; } = 3;
+
+    public TimeSpan ApiRetryBaseDelay { get; init; } = TimeSpan.FromMilliseconds(200);
+
+    public int ApiMaxPageCount { get; init; } = 100;
+
     public string? DevelopmentAccessToken { get; init; }
 }

@@ -20,6 +20,8 @@ Encrypted connected-account credentials and key-ring operations are documented
 in [`docs/instagram-credential-storage.md`](docs/instagram-credential-storage.md).
 The one-time-state Instagram authorization-code flow is documented in
 [`docs/api/instagram-oauth.md`](docs/api/instagram-oauth.md).
+The typed Instagram API client, bounded pagination, retry, and error contract is
+documented in [`docs/api/instagram-client.md`](docs/api/instagram-client.md).
 
 ## Repository structure
 

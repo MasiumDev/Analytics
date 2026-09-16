@@ -48,6 +48,10 @@ on a command line.
 | `Instagram:TokenEndpoint` | Always | No | Defaults to Instagram's server-side code-exchange endpoint. |
 | `Instagram:GraphApiBaseUri` | Always | No | Safe default is committed. |
 | `Instagram:StateLifetime` | Always | No | Defaults to ten minutes; maximum one hour. |
+| `Instagram:ApiRequestTimeout` | Always | No | Per-attempt API timeout; defaults to 30 seconds. |
+| `Instagram:ApiMaxAttempts` | Always | No | Bounded transient retry attempts; defaults to 3. |
+| `Instagram:ApiRetryBaseDelay` | Always | No | Linear retry delay base; defaults to 200 ms. |
+| `Instagram:ApiMaxPageCount` | Always | No | Pagination safety limit; defaults to 100. |
 | `Instagram:DevelopmentAccessToken` | Never | Yes | Optional Development-only spike credential. |
 
 The development access token is configuration-only. No application service,

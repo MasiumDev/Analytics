@@ -36,6 +36,20 @@ public static class InstagramIntegrationConfigurationExtensions
                     && options.StateLifetime <= TimeSpan.FromHours(1),
                 "Instagram:StateLifetime must be greater than zero and no longer than one hour.")
             .Validate(
+                options => options.ApiRequestTimeout > TimeSpan.Zero
+                    && options.ApiRequestTimeout <= TimeSpan.FromMinutes(2),
+                "Instagram:ApiRequestTimeout must be greater than zero and no longer than two minutes.")
+            .Validate(
+                options => options.ApiMaxAttempts is >= 1 and <= 5,
+                "Instagram:ApiMaxAttempts must be between one and five.")
+            .Validate(
+                options => options.ApiRetryBaseDelay >= TimeSpan.Zero
+                    && options.ApiRetryBaseDelay <= TimeSpan.FromSeconds(10),
+                "Instagram:ApiRetryBaseDelay must be between zero and ten seconds.")
+            .Validate(
+                options => options.ApiMaxPageCount is >= 1 and <= 1000,
+                "Instagram:ApiMaxPageCount must be between one and one thousand.")
+            .Validate(
                 options => environment.IsDevelopment()
                     || string.IsNullOrWhiteSpace(options.DevelopmentAccessToken),
                 "Instagram:DevelopmentAccessToken is permitted only in the Development environment.")
@@ -47,6 +61,12 @@ public static class InstagramIntegrationConfigurationExtensions
                     .GetRequiredService<IOptions<InstagramIntegrationOptions>>()
                     .Value));
         services.AddSingleton(TimeProvider.System);
+        services
+            .AddHttpClient<IInstagramApiClient, InstagramApiClient>()
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+            {
+                AllowAutoRedirect = false,
+            });
         services
             .AddHttpClient<IInstagramOAuthClient, InstagramOAuthClient>()
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
