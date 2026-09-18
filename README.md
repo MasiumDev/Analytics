@@ -26,6 +26,9 @@ The tenant-safe media catalog and current-stat projection schema is documented
 in [`docs/architecture/instagram-media-schema.md`](docs/architecture/instagram-media-schema.md).
 The resumable historical media import contract is documented in
 [`docs/api/instagram-media-import.md`](docs/api/instagram-media-import.md).
+The live development-account metric, freshness, rate-limit, and MVP polling
+decisions are recorded in
+[`docs/api/instagram-live-api-spike.md`](docs/api/instagram-live-api-spike.md).
 
 ## Repository structure
 
