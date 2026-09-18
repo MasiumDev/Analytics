@@ -7,6 +7,7 @@ using InstagramMediaEntity = Analytics.Api.InstagramMedia.Domain.InstagramMedia;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
 
 namespace Analytics.Api.Data;
 
@@ -24,6 +25,12 @@ public sealed class AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opti
     public DbSet<MediaCurrentStats> MediaCurrentStats => Set<MediaCurrentStats>();
 
     public DbSet<AccountCurrentStats> AccountCurrentStats => Set<AccountCurrentStats>();
+
+    public DbSet<MediaInsightSnapshot> MediaInsightSnapshots =>
+        Set<MediaInsightSnapshot>();
+
+    public DbSet<AccountInsightSnapshot> AccountInsightSnapshots =>
+        Set<AccountInsightSnapshot>();
 
     public DbSet<MediaImportCheckpoint> MediaImportCheckpoints =>
         Set<MediaImportCheckpoint>();
@@ -126,6 +133,63 @@ public sealed class AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opti
                 .OnDelete(DeleteBehavior.Cascade);
         });
 
+        builder.Entity<MediaInsightSnapshot>(snapshot =>
+        {
+            snapshot.ToTable(
+                "MediaInsightSnapshots",
+                table => table.HasCheckConstraint(
+                    "CK_MediaInsightSnapshots_NonNegativeMetrics",
+                    "([ViewsCount] IS NULL OR [ViewsCount] >= 0) AND " +
+                    "([ReachCount] IS NULL OR [ReachCount] >= 0) AND " +
+                    "([LikesCount] IS NULL OR [LikesCount] >= 0) AND " +
+                    "([CommentsCount] IS NULL OR [CommentsCount] >= 0) AND " +
+                    "([SavesCount] IS NULL OR [SavesCount] >= 0) AND " +
+                    "([SharesCount] IS NULL OR [SharesCount] >= 0) AND " +
+                    "([TotalInteractionsCount] IS NULL OR " +
+                    "[TotalInteractionsCount] >= 0) AND " +
+                    "([AverageWatchTimeMilliseconds] IS NULL OR " +
+                    "[AverageWatchTimeMilliseconds] >= 0) AND " +
+                    "([TotalWatchTimeMilliseconds] IS NULL OR " +
+                    "[TotalWatchTimeMilliseconds] >= 0)"));
+            snapshot.HasKey(item => item.Id);
+            snapshot.HasIndex(item => new { item.InstagramMediaId, item.CapturedAtUtc })
+                .IsUnique()
+                .IsDescending(false, true);
+            snapshot.HasIndex(item => item.CapturedAtUtc);
+            snapshot.HasOne(item => item.InstagramMedia)
+                .WithMany()
+                .HasForeignKey(item => item.InstagramMediaId)
+                .OnDelete(DeleteBehavior.Cascade);
+            ConfigureAppendOnly(snapshot.Metadata);
+        });
+
+        builder.Entity<AccountInsightSnapshot>(snapshot =>
+        {
+            snapshot.ToTable(
+                "AccountInsightSnapshots",
+                table => table.HasCheckConstraint(
+                    "CK_AccountInsightSnapshots_NonNegativeMetrics",
+                    "([ViewsCount] IS NULL OR [ViewsCount] >= 0) AND " +
+                    "([ReachCount] IS NULL OR [ReachCount] >= 0) AND " +
+                    "([FollowerCount] IS NULL OR [FollowerCount] >= 0) AND " +
+                    "([ProfileViewsCount] IS NULL OR [ProfileViewsCount] >= 0) AND " +
+                    "([WebsiteClicksCount] IS NULL OR [WebsiteClicksCount] >= 0) AND " +
+                    "([AccountsEngagedCount] IS NULL OR " +
+                    "[AccountsEngagedCount] >= 0) AND " +
+                    "([TotalInteractionsCount] IS NULL OR " +
+                    "[TotalInteractionsCount] >= 0)"));
+            snapshot.HasKey(item => item.Id);
+            snapshot.HasIndex(item => new { item.InstagramAccountId, item.CapturedAtUtc })
+                .IsUnique()
+                .IsDescending(false, true);
+            snapshot.HasIndex(item => item.CapturedAtUtc);
+            snapshot.HasOne(item => item.InstagramAccount)
+                .WithMany()
+                .HasForeignKey(item => item.InstagramAccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+            ConfigureAppendOnly(snapshot.Metadata);
+        });
+
         builder.Entity<MediaImportCheckpoint>(checkpoint =>
         {
             checkpoint.ToTable("MediaImportCheckpoints");
@@ -141,5 +205,13 @@ public sealed class AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opti
                 .HasForeignKey<MediaImportCheckpoint>(item => item.InstagramAccountId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+    }
+
+    private static void ConfigureAppendOnly(IMutableEntityType entityType)
+    {
+        foreach (var property in entityType.GetProperties())
+        {
+            property.SetAfterSaveBehavior(PropertySaveBehavior.Throw);
+        }
     }
 }

@@ -22,5 +22,21 @@ server receipt timestamp. Both projections include rowversion for safe
 refreshes. Historical, append-only snapshots are intentionally separate from
 these current-value tables.
 
+`MediaInsightSnapshots` stores the observed media metrics validated by the
+live API spike: views, reach, likes, comments, saves, shares, total
+interactions, average watch time, and total watch time.
+`AccountInsightSnapshots` stores views, reach, follower count, profile views,
+website clicks, accounts engaged, and total interactions. Every metric remains
+nullable so an unavailable series is never rewritten as a numeric zero.
+
+Each snapshot has an immutable surrogate ID, a server `CapturedAtUtc`, and an
+optional provider `SourceTimestampUtc`. The parent ID plus capture timestamp is
+a unique descending index: retrying the same logical sample is idempotent and
+the main newest-first time-series query uses the same index. A separate capture
+time index supports future retention batches. EF rejects updates after insert,
+while account ownership cascades and explicit retention deletes remain
+possible. Domain construction normalizes timestamps to UTC and both domain and
+database constraints reject negative metric values.
+
 The entity and table names describe the Instagram platform domain only; they do
 not contain the repository name or any candidate public product brand.
