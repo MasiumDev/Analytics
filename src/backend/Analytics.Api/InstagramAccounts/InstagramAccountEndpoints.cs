@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Analytics.Api.InstagramAccounts.Application;
 using Analytics.Api.InstagramAccounts.Domain;
 using Analytics.Api.InstagramCredentials.Application;
+using Analytics.Api.InstagramMedia.Application;
 using Analytics.Api.Security;
 
 namespace Analytics.Api.InstagramAccounts;
@@ -35,6 +36,10 @@ public static class InstagramAccountEndpoints
             .RequireAntiforgery()
             .RequireRateLimiting(ApplicationSecurity.TenantMutationRateLimitPolicy)
             .WithName("SynchronizeInstagramAccountProfile");
+        group.MapPost("/{accountId:guid}/import-media", ImportMediaAsync)
+            .RequireAntiforgery()
+            .RequireRateLimiting(ApplicationSecurity.TenantMutationRateLimitPolicy)
+            .WithName("ImportInstagramMedia");
 
         return endpoints;
     }
@@ -120,6 +125,42 @@ public static class InstagramAccountEndpoints
                 statusCode: StatusCodes.Status502BadGateway,
                 title: "Instagram profile sync failed",
                 detail: "Instagram returned an invalid profile response."),
+        };
+    }
+
+    private static async Task<IResult> ImportMediaAsync(
+        Guid accountId,
+        ClaimsPrincipal principal,
+        IInstagramMediaImportService importService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetOwnerId(principal, out var ownerUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await importService.ImportAsync(
+            ownerUserId,
+            accountId,
+            cancellationToken);
+        if (result is null)
+        {
+            return Results.NotFound();
+        }
+
+        return result.Status switch
+        {
+            InstagramMediaImportResultStatus.Completed => Results.Ok(result),
+            InstagramMediaImportResultStatus.ReconnectRequired => Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Instagram reconnect required",
+                detail: "Reconnect this Instagram account before importing media."),
+            InstagramMediaImportResultStatus.RetryLater => Results.Json(
+                result,
+                statusCode: StatusCodes.Status503ServiceUnavailable),
+            _ => Results.Json(
+                result,
+                statusCode: StatusCodes.Status502BadGateway),
         };
     }
 

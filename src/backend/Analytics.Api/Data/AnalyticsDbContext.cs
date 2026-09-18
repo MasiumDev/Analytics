@@ -25,6 +25,9 @@ public sealed class AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opti
 
     public DbSet<AccountCurrentStats> AccountCurrentStats => Set<AccountCurrentStats>();
 
+    public DbSet<MediaImportCheckpoint> MediaImportCheckpoints =>
+        Set<MediaImportCheckpoint>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -120,6 +123,22 @@ public sealed class AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opti
             stats.HasOne(item => item.InstagramAccount)
                 .WithOne()
                 .HasForeignKey<AccountCurrentStats>(item => item.InstagramAccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        builder.Entity<MediaImportCheckpoint>(checkpoint =>
+        {
+            checkpoint.ToTable("MediaImportCheckpoints");
+            checkpoint.HasKey(item => item.InstagramAccountId);
+            checkpoint.Property(item => item.AfterCursor).HasMaxLength(1024);
+            checkpoint.Property(item => item.Status)
+                .HasConversion<string>()
+                .HasMaxLength(32)
+                .IsRequired();
+            checkpoint.Property(item => item.RowVersion).IsRowVersion();
+            checkpoint.HasOne(item => item.InstagramAccount)
+                .WithOne()
+                .HasForeignKey<MediaImportCheckpoint>(item => item.InstagramAccountId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

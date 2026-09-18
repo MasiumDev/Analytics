@@ -24,6 +24,8 @@ The typed Instagram API client, bounded pagination, retry, and error contract is
 documented in [`docs/api/instagram-client.md`](docs/api/instagram-client.md).
 The tenant-safe media catalog and current-stat projection schema is documented
 in [`docs/architecture/instagram-media-schema.md`](docs/architecture/instagram-media-schema.md).
+The resumable historical media import contract is documented in
+[`docs/api/instagram-media-import.md`](docs/api/instagram-media-import.md).
 
 ## Repository structure
 

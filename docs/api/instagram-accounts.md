@@ -18,6 +18,8 @@ contract and are rate limited per authenticated user.
   possible, clears the local ciphertext, and stops dependent jobs.
 - `POST /api/instagram-accounts/{id}/sync-profile` refreshes owned profile
   metadata and current account counters.
+- `POST /api/instagram-accounts/{id}/import-media` runs or resumes the bounded,
+  idempotent historical media import.
 
 The API derives ownership from the authenticated session; clients never submit
 an owner user ID. Requests for an account owned by another user return `404` so
