@@ -25,6 +25,46 @@ public sealed class InstagramMediaImportService(
     public async Task<InstagramMediaImportResult?> ImportAsync(
         Guid ownerUserId,
         Guid instagramAccountId,
+        CancellationToken cancellationToken) =>
+        await ImportInternalAsync(
+            ownerUserId,
+            instagramAccountId,
+            retryOnly: false,
+            cancellationToken);
+
+    public async Task<InstagramMediaImportResult?> RetryAsync(
+        Guid ownerUserId,
+        Guid instagramAccountId,
+        CancellationToken cancellationToken) =>
+        await ImportInternalAsync(
+            ownerUserId,
+            instagramAccountId,
+            retryOnly: true,
+            cancellationToken);
+
+    public async Task<InstagramMediaImportStatusResult?> GetStatusAsync(
+        Guid ownerUserId,
+        Guid instagramAccountId,
+        CancellationToken cancellationToken)
+    {
+        if (await accountService.GetAsync(
+                ownerUserId,
+                instagramAccountId,
+                cancellationToken) is null)
+        {
+            return null;
+        }
+
+        var checkpoint = await repository.FindAsync(
+            instagramAccountId,
+            cancellationToken);
+        return checkpoint is null ? null : Status(checkpoint);
+    }
+
+    private async Task<InstagramMediaImportResult?> ImportInternalAsync(
+        Guid ownerUserId,
+        Guid instagramAccountId,
+        bool retryOnly,
         CancellationToken cancellationToken)
     {
         var account = await accountService.GetAsync(
@@ -75,7 +115,19 @@ public sealed class InstagramMediaImportService(
         var checkpoint = await repository.PrepareAsync(
             instagramAccountId,
             now,
+            retryOnly,
             cancellationToken);
+        if (checkpoint is null)
+        {
+            return new InstagramMediaImportResult(
+                InstagramMediaImportResultStatus.RetryNotAllowed,
+                0,
+                0,
+                0,
+                0,
+                0,
+                HasCheckpoint: false);
+        }
         var afterCursor = checkpoint.AfterCursor;
         var seenCursors = new HashSet<string>(StringComparer.Ordinal);
         if (!string.IsNullOrWhiteSpace(afterCursor))
@@ -273,6 +325,21 @@ public sealed class InstagramMediaImportService(
             checkpoint.FailedCount,
             checkpoint.PagesProcessed,
             HasCheckpoint: true);
+
+    private static InstagramMediaImportStatusResult Status(
+        MediaImportCheckpoint checkpoint) =>
+        new(
+            checkpoint.InstagramAccountId,
+            checkpoint.Status.ToString(),
+            checkpoint.AfterCursor,
+            checkpoint.FetchedCount,
+            checkpoint.CreatedCount,
+            checkpoint.UpdatedCount,
+            checkpoint.FailedCount,
+            checkpoint.PagesProcessed,
+            checkpoint.StartedAtUtc,
+            checkpoint.UpdatedAtUtc,
+            checkpoint.CompletedAtUtc);
 
     private sealed record InstagramMediaPayload(
         [property: JsonPropertyName("id")] string? Id,

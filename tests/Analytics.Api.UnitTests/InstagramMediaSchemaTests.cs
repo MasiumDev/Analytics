@@ -39,17 +39,19 @@ public sealed class InstagramMediaSchemaTests
             4,
             100,
             80,
+            published,
             published);
         var accountStats = new AccountCurrentStats(accountId, 1000, 120, 40, published);
 
         Assert.Equal(TimeSpan.Zero, media.PublishedAtUtc.Offset);
         Assert.Equal(TimeSpan.Zero, media.CreatedAtUtc.Offset);
         Assert.Equal(TimeSpan.Zero, media.UpdatedAtUtc.Offset);
-        Assert.Equal(TimeSpan.Zero, mediaStats.CapturedAtUtc.Offset);
+        Assert.Equal(TimeSpan.Zero, mediaStats.SourceTimestampUtc!.Value.Offset);
+        Assert.Equal(TimeSpan.Zero, mediaStats.ReceivedAtUtc.Offset);
         Assert.Equal(TimeSpan.Zero, accountStats.CapturedAtUtc.Offset);
         Assert.Equal("caption", media.Caption);
         Assert.Throws<ArgumentOutOfRangeException>(() =>
-            mediaStats.Update(-1, null, null, null, null, null, published));
+            mediaStats.Update(-1, null, null, null, null, null, published, published));
         Assert.Throws<ArgumentOutOfRangeException>(() =>
             accountStats.Update(-1, null, null, published));
     }

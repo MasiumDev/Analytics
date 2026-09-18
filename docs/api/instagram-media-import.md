@@ -18,8 +18,23 @@ interrupts the run, the next request resumes from the last committed cursor.
 After a completed import, a new request intentionally starts from the first page
 to discover updates while remaining idempotent.
 
+The persisted lifecycle is `Queued`, `Running`, `Succeeded`, `Partial`, or
+`Failed`. `GET /api/instagram-accounts/{id}/media-import` exposes the current
+status, cursor, counters, and timestamps. `POST
+/api/instagram-accounts/{id}/media-import/retry` accepts only `Partial` or
+`Failed` checkpoints; other states return `409` without calling Instagram.
+
 The result reports `fetched`, `created`, `updated`, `failed`, `pagesProcessed`,
 and whether a checkpoint exists. Credential failures return an actionable
 reconnect response. Rate limits, transient errors, repeated/oversized cursors,
 and the configured maximum page count stop the bounded run without an infinite
 loop. Ownership is verified before reading a credential or calling Instagram.
+
+`POST /api/instagram-accounts/{id}/sync-media-stats` refreshes the current
+likes, comments, saves, shares, reach, and plays for every imported media item.
+Each upsert records the provider's optional source timestamp and the server's
+UTC receipt timestamp. Individual provider failures produce a `207 Partial`
+result while successful items remain committed; a complete provider failure
+returns `502`. Credential rejection moves the account to reconnect-required and
+stops dependent jobs. All status, retry, and statistics endpoints return `404`
+for an account owned by another tenant before making any provider request.

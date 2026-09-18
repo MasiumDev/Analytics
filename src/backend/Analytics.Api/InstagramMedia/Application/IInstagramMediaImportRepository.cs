@@ -4,9 +4,14 @@ namespace Analytics.Api.InstagramMedia.Application;
 
 public interface IInstagramMediaImportRepository
 {
-    Task<MediaImportCheckpoint> PrepareAsync(
+    Task<MediaImportCheckpoint?> PrepareAsync(
         Guid instagramAccountId,
         DateTimeOffset nowUtc,
+        bool retryOnly,
+        CancellationToken cancellationToken);
+
+    Task<MediaImportCheckpoint?> FindAsync(
+        Guid instagramAccountId,
         CancellationToken cancellationToken);
 
     Task<MediaImportCheckpoint> PersistPageAsync(

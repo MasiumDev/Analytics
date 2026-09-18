@@ -81,6 +81,7 @@ public sealed class InstagramMediaSchemaIntegrationTests
                     4,
                     100,
                     80,
+                    capturedAt,
                     capturedAt));
                 database.AccountCurrentStats.Add(new AccountCurrentStats(
                     firstAccount.Id,

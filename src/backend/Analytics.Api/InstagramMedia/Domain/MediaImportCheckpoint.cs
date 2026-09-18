@@ -18,7 +18,7 @@ public sealed class MediaImportCheckpoint
         }
 
         InstagramAccountId = instagramAccountId;
-        Restart(startedAtUtc);
+        RestartQueued(startedAtUtc);
     }
 
     public Guid InstagramAccountId { get; private init; }
@@ -47,17 +47,13 @@ public sealed class MediaImportCheckpoint
 
     public InstagramAccount InstagramAccount { get; private init; } = null!;
 
-    public void Resume(DateTimeOffset nowUtc)
+    public void Start(DateTimeOffset nowUtc)
     {
-        if (Status == InstagramMediaImportStatus.Completed)
-        {
-            Restart(nowUtc);
-            return;
-        }
-
         Status = InstagramMediaImportStatus.Running;
         UpdatedAtUtc = nowUtc.ToUniversalTime();
     }
+
+    public void RestartQueued(DateTimeOffset nowUtc) => RestartQueuedCore(nowUtc);
 
     public void RecordPage(
         string? afterCursor,
@@ -80,7 +76,9 @@ public sealed class MediaImportCheckpoint
     public void Complete(DateTimeOffset nowUtc)
     {
         AfterCursor = null;
-        Status = InstagramMediaImportStatus.Completed;
+        Status = FailedCount > 0
+            ? InstagramMediaImportStatus.Partial
+            : InstagramMediaImportStatus.Succeeded;
         UpdatedAtUtc = nowUtc.ToUniversalTime();
         CompletedAtUtc = UpdatedAtUtc;
     }
@@ -91,10 +89,10 @@ public sealed class MediaImportCheckpoint
         UpdatedAtUtc = nowUtc.ToUniversalTime();
     }
 
-    private void Restart(DateTimeOffset nowUtc)
+    private void RestartQueuedCore(DateTimeOffset nowUtc)
     {
         AfterCursor = null;
-        Status = InstagramMediaImportStatus.Running;
+        Status = InstagramMediaImportStatus.Queued;
         PagesProcessed = 0;
         FetchedCount = 0;
         CreatedCount = 0;
@@ -113,7 +111,9 @@ public sealed class MediaImportCheckpoint
 
 public enum InstagramMediaImportStatus
 {
+    Queued,
     Running,
-    Completed,
+    Succeeded,
+    Partial,
     Failed,
 }

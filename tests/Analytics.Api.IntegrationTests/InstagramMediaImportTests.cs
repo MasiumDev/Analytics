@@ -1,3 +1,5 @@
+using System.Net;
+using System.Net.Http.Json;
 using System.Text.Json;
 using Analytics.Api.Data;
 using Analytics.Api.Identity;
@@ -19,6 +21,7 @@ namespace Analytics.Api.IntegrationTests;
 
 public sealed class InstagramMediaImportTests
 {
+    private const string Password = "StrongPass123";
     private const string AccessToken = "media-import-test-token";
 
     [Fact]
@@ -66,8 +69,8 @@ public sealed class InstagramMediaImportTests
                 var users = services.GetRequiredService<UserManager<ApplicationUser>>();
                 var owner = User("import-owner@example.com");
                 var otherOwner = User("other-import-owner@example.com");
-                Assert.True((await users.CreateAsync(owner)).Succeeded);
-                Assert.True((await users.CreateAsync(otherOwner)).Succeeded);
+                Assert.True((await users.CreateAsync(owner, Password)).Succeeded);
+                Assert.True((await users.CreateAsync(otherOwner, Password)).Succeeded);
                 ownerId = owner.Id;
                 otherOwnerId = otherOwner.Id;
 
@@ -121,6 +124,7 @@ public sealed class InstagramMediaImportTests
                     .AsNoTracking()
                     .SingleAsync();
                 Assert.Equal("cursor-1", checkpoint.AfterCursor);
+                Assert.Equal(InstagramMediaImportStatus.Running, checkpoint.Status);
                 Assert.Equal(1, checkpoint.PagesProcessed);
                 Assert.Equal(2, checkpoint.CreatedCount);
                 Assert.Equal(2, await database.InstagramMedia.CountAsync());
@@ -168,16 +172,54 @@ public sealed class InstagramMediaImportTests
             Assert.Equal(4, repeated.Updated);
             Assert.Equal(1, repeated.Failed);
 
-            var callsBeforeDenied = apiClient.TotalRequestCount;
-            await using (var deniedScope = application.Services.CreateAsyncScope())
+            using var client = application.CreateClient(new WebApplicationFactoryClientOptions
             {
-                var importer = deniedScope.ServiceProvider
-                    .GetRequiredService<IInstagramMediaImportService>();
-                Assert.Null(await importer.ImportAsync(
-                    otherOwnerId,
-                    accountId,
-                    CancellationToken.None));
-            }
+                AllowAutoRedirect = false,
+                BaseAddress = new Uri("https://api.example.com"),
+            });
+            await LoginAsync(client, "import-owner@example.com");
+            var statusResponse = await client.GetAsync(
+                $"/api/instagram-accounts/{accountId}/media-import");
+            Assert.Equal(HttpStatusCode.OK, statusResponse.StatusCode);
+            var status = await statusResponse.Content
+                .ReadFromJsonAsync<InstagramMediaImportStatusResult>();
+            Assert.Equal("Partial", status!.Status);
+            Assert.Equal(5, status.Fetched);
+
+            apiClient.IncludeInvalid = false;
+            apiClient.ResetRequestCounter();
+            var retryCallsBefore = apiClient.TotalRequestCount;
+            var retryResponse = await client.PostWithCsrfAsync(
+                $"/api/instagram-accounts/{accountId}/media-import/retry");
+            Assert.Equal(HttpStatusCode.OK, retryResponse.StatusCode);
+            var retried = (await retryResponse.Content
+                .ReadFromJsonAsync<InstagramMediaImportResult>())!;
+            Assert.Equal(InstagramMediaImportResultStatus.Completed, retried.Status);
+            Assert.Equal(4, retried.Fetched);
+            Assert.Equal(0, retried.Created);
+            Assert.Equal(4, retried.Updated);
+            Assert.Equal(0, retried.Failed);
+            Assert.True(apiClient.TotalRequestCount > retryCallsBefore);
+
+            apiClient.ResetRequestCounter();
+            var disallowed = await client.PostWithCsrfAsync(
+                $"/api/instagram-accounts/{accountId}/media-import/retry");
+            Assert.Equal(HttpStatusCode.Conflict, disallowed.StatusCode);
+            Assert.Equal(0, apiClient.RequestCount);
+
+            var callsBeforeDenied = apiClient.TotalRequestCount;
+            Assert.Equal(
+                HttpStatusCode.NoContent,
+                (await client.PostWithCsrfAsync("/api/auth/logout")).StatusCode);
+            await LoginAsync(client, "other-import-owner@example.com");
+            Assert.Equal(
+                HttpStatusCode.NotFound,
+                (await client.GetAsync(
+                    $"/api/instagram-accounts/{accountId}/media-import")).StatusCode);
+            Assert.Equal(
+                HttpStatusCode.NotFound,
+                (await client.PostWithCsrfAsync(
+                    $"/api/instagram-accounts/{accountId}/media-import/retry")).StatusCode);
             Assert.Equal(callsBeforeDenied, apiClient.TotalRequestCount);
 
             await using (var verificationScope = application.Services.CreateAsyncScope())
@@ -204,6 +246,14 @@ public sealed class InstagramMediaImportTests
         }
     }
 
+    private static async Task LoginAsync(HttpClient client, string email)
+    {
+        var response = await client.PostAsJsonWithCsrfAsync(
+            "/api/auth/login",
+            new LoginRequest(email, Password));
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+    }
+
     private static ApplicationUser User(string email) => new()
     {
         Id = Guid.NewGuid(),
@@ -217,6 +267,8 @@ public sealed class InstagramMediaImportTests
             new(JsonSerializerDefaults.Web);
 
         public int? CancelOnRequest { get; set; }
+
+        public bool IncludeInvalid { get; set; } = true;
 
         public CancellationTokenSource? Cancellation { get; set; }
 
@@ -250,7 +302,9 @@ public sealed class InstagramMediaImportTests
                     new[] { Payload("media-1", "IMAGE"), Payload("media-2", "VIDEO") },
                     "cursor-1"),
                 "cursor-1" => (
-                    new[] { Payload("media-3", "CAROUSEL_ALBUM"), "{\"id\":\"invalid\"}" },
+                    IncludeInvalid
+                        ? new[] { Payload("media-3", "CAROUSEL_ALBUM"), "{\"id\":\"invalid\"}" }
+                        : new[] { Payload("media-3", "CAROUSEL_ALBUM") },
                     "cursor-2"),
                 "cursor-2" => (
                     new[] { Payload("media-4", "VIDEO", "REELS") },

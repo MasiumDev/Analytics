@@ -20,6 +20,12 @@ contract and are rate limited per authenticated user.
   metadata and current account counters.
 - `POST /api/instagram-accounts/{id}/import-media` runs or resumes the bounded,
   idempotent historical media import.
+- `GET /api/instagram-accounts/{id}/media-import` returns the persisted import
+  lifecycle, cursor, counters, and timestamps.
+- `POST /api/instagram-accounts/{id}/media-import/retry` retries a partial or
+  failed import.
+- `POST /api/instagram-accounts/{id}/sync-media-stats` refreshes current metrics
+  for imported media and reports complete or partial results.
 
 The API derives ownership from the authenticated session; clients never submit
 an owner user ID. Requests for an account owned by another user return `404` so

@@ -37,6 +37,8 @@ builder.Services.AddScoped<IInstagramAccountProfileSyncService, InstagramAccount
 builder.Services.AddScoped<IAccountCurrentStatsRepository, EfAccountCurrentStatsRepository>();
 builder.Services.AddScoped<IInstagramMediaImportRepository, EfInstagramMediaImportRepository>();
 builder.Services.AddScoped<IInstagramMediaImportService, InstagramMediaImportService>();
+builder.Services.AddScoped<IInstagramMediaCurrentStatsRepository, EfInstagramMediaCurrentStatsRepository>();
+builder.Services.AddScoped<IInstagramMediaStatsSyncService, InstagramMediaStatsSyncService>();
 builder.Services.AddScoped<IInstagramOAuthStateRepository, EfInstagramOAuthStateRepository>();
 builder.Services.AddScoped<IInstagramOAuthStateService, InstagramOAuthStateService>();
 builder.Services.AddProblemDetails(options =>

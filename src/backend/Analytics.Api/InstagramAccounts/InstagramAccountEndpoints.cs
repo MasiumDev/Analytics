@@ -40,6 +40,16 @@ public static class InstagramAccountEndpoints
             .RequireAntiforgery()
             .RequireRateLimiting(ApplicationSecurity.TenantMutationRateLimitPolicy)
             .WithName("ImportInstagramMedia");
+        group.MapGet("/{accountId:guid}/media-import", GetMediaImportStatusAsync)
+            .WithName("GetInstagramMediaImportStatus");
+        group.MapPost("/{accountId:guid}/media-import/retry", RetryMediaImportAsync)
+            .RequireAntiforgery()
+            .RequireRateLimiting(ApplicationSecurity.TenantMutationRateLimitPolicy)
+            .WithName("RetryInstagramMediaImport");
+        group.MapPost("/{accountId:guid}/sync-media-stats", SynchronizeMediaStatsAsync)
+            .RequireAntiforgery()
+            .RequireRateLimiting(ApplicationSecurity.TenantMutationRateLimitPolicy)
+            .WithName("SynchronizeInstagramMediaStats");
 
         return endpoints;
     }
@@ -158,6 +168,103 @@ public static class InstagramAccountEndpoints
             InstagramMediaImportResultStatus.RetryLater => Results.Json(
                 result,
                 statusCode: StatusCodes.Status503ServiceUnavailable),
+            InstagramMediaImportResultStatus.RetryNotAllowed => Results.Json(
+                result,
+                statusCode: StatusCodes.Status409Conflict),
+            _ => Results.Json(
+                result,
+                statusCode: StatusCodes.Status502BadGateway),
+        };
+    }
+
+    private static async Task<IResult> GetMediaImportStatusAsync(
+        Guid accountId,
+        ClaimsPrincipal principal,
+        IInstagramMediaImportService importService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetOwnerId(principal, out var ownerUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await importService.GetStatusAsync(
+            ownerUserId,
+            accountId,
+            cancellationToken);
+        return result is null ? Results.NotFound() : Results.Ok(result);
+    }
+
+    private static async Task<IResult> RetryMediaImportAsync(
+        Guid accountId,
+        ClaimsPrincipal principal,
+        IInstagramMediaImportService importService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetOwnerId(principal, out var ownerUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await importService.RetryAsync(
+            ownerUserId,
+            accountId,
+            cancellationToken);
+        if (result is null)
+        {
+            return Results.NotFound();
+        }
+
+        return result.Status switch
+        {
+            InstagramMediaImportResultStatus.Completed => Results.Ok(result),
+            InstagramMediaImportResultStatus.RetryNotAllowed => Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Media import retry not allowed",
+                detail: "Only partial or failed media imports can be retried."),
+            InstagramMediaImportResultStatus.ReconnectRequired => Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Instagram reconnect required",
+                detail: "Reconnect this Instagram account before retrying the import."),
+            InstagramMediaImportResultStatus.RetryLater => Results.Json(
+                result,
+                statusCode: StatusCodes.Status503ServiceUnavailable),
+            _ => Results.Json(
+                result,
+                statusCode: StatusCodes.Status502BadGateway),
+        };
+    }
+
+    private static async Task<IResult> SynchronizeMediaStatsAsync(
+        Guid accountId,
+        ClaimsPrincipal principal,
+        IInstagramMediaStatsSyncService syncService,
+        CancellationToken cancellationToken)
+    {
+        if (!TryGetOwnerId(principal, out var ownerUserId))
+        {
+            return Results.Unauthorized();
+        }
+
+        var result = await syncService.SynchronizeAsync(
+            ownerUserId,
+            accountId,
+            cancellationToken);
+        if (result is null)
+        {
+            return Results.NotFound();
+        }
+
+        return result.Status switch
+        {
+            InstagramMediaStatsSyncStatus.Succeeded => Results.Ok(result),
+            InstagramMediaStatsSyncStatus.Partial => Results.Json(
+                result,
+                statusCode: StatusCodes.Status207MultiStatus),
+            InstagramMediaStatsSyncStatus.ReconnectRequired => Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Instagram reconnect required",
+                detail: "Reconnect this Instagram account before synchronizing media statistics."),
             _ => Results.Json(
                 result,
                 statusCode: StatusCodes.Status502BadGateway),

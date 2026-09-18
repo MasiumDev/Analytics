@@ -14,7 +14,8 @@ public sealed class MediaCurrentStats
         long? sharesCount,
         long? reachCount,
         long? playsCount,
-        DateTimeOffset capturedAtUtc)
+        DateTimeOffset? sourceTimestampUtc,
+        DateTimeOffset receivedAtUtc)
     {
         if (instagramMediaId == Guid.Empty)
         {
@@ -29,7 +30,8 @@ public sealed class MediaCurrentStats
             sharesCount,
             reachCount,
             playsCount,
-            capturedAtUtc);
+            sourceTimestampUtc,
+            receivedAtUtc);
     }
 
     public Guid InstagramMediaId { get; private init; }
@@ -46,7 +48,9 @@ public sealed class MediaCurrentStats
 
     public long? PlaysCount { get; private set; }
 
-    public DateTimeOffset CapturedAtUtc { get; private set; }
+    public DateTimeOffset? SourceTimestampUtc { get; private set; }
+
+    public DateTimeOffset ReceivedAtUtc { get; private set; }
 
     public byte[] RowVersion { get; private set; } = [];
 
@@ -59,7 +63,8 @@ public sealed class MediaCurrentStats
         long? sharesCount,
         long? reachCount,
         long? playsCount,
-        DateTimeOffset capturedAtUtc)
+        DateTimeOffset? sourceTimestampUtc,
+        DateTimeOffset receivedAtUtc)
     {
         LikeCount = NonNegative(likeCount, nameof(likeCount));
         CommentsCount = NonNegative(commentsCount, nameof(commentsCount));
@@ -67,7 +72,8 @@ public sealed class MediaCurrentStats
         SharesCount = NonNegative(sharesCount, nameof(sharesCount));
         ReachCount = NonNegative(reachCount, nameof(reachCount));
         PlaysCount = NonNegative(playsCount, nameof(playsCount));
-        CapturedAtUtc = capturedAtUtc.ToUniversalTime();
+        SourceTimestampUtc = sourceTimestampUtc?.ToUniversalTime();
+        ReceivedAtUtc = receivedAtUtc.ToUniversalTime();
     }
 
     private static long? NonNegative(long? value, string parameterName)

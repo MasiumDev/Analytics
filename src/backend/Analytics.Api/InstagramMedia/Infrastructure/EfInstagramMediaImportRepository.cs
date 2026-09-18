@@ -9,9 +9,19 @@ namespace Analytics.Api.InstagramMedia.Infrastructure;
 public sealed class EfInstagramMediaImportRepository(AnalyticsDbContext database)
     : IInstagramMediaImportRepository
 {
-    public async Task<MediaImportCheckpoint> PrepareAsync(
+    public Task<MediaImportCheckpoint?> FindAsync(
+        Guid instagramAccountId,
+        CancellationToken cancellationToken) =>
+        database.MediaImportCheckpoints
+            .AsNoTracking()
+            .SingleOrDefaultAsync(
+                item => item.InstagramAccountId == instagramAccountId,
+                cancellationToken);
+
+    public async Task<MediaImportCheckpoint?> PrepareAsync(
         Guid instagramAccountId,
         DateTimeOffset nowUtc,
+        bool retryOnly,
         CancellationToken cancellationToken)
     {
         var checkpoint = await database.MediaImportCheckpoints.SingleOrDefaultAsync(
@@ -19,14 +29,33 @@ public sealed class EfInstagramMediaImportRepository(AnalyticsDbContext database
             cancellationToken);
         if (checkpoint is null)
         {
+            if (retryOnly)
+            {
+                return null;
+            }
+
             checkpoint = new MediaImportCheckpoint(instagramAccountId, nowUtc);
             database.MediaImportCheckpoints.Add(checkpoint);
+            await database.SaveChangesAsync(cancellationToken);
         }
         else
         {
-            checkpoint.Resume(nowUtc);
+            if (retryOnly && checkpoint.Status is not (
+                    InstagramMediaImportStatus.Failed
+                    or InstagramMediaImportStatus.Partial))
+            {
+                return null;
+            }
+
+            if (checkpoint.Status is InstagramMediaImportStatus.Succeeded
+                or InstagramMediaImportStatus.Partial)
+            {
+                checkpoint.RestartQueued(nowUtc);
+                await database.SaveChangesAsync(cancellationToken);
+            }
         }
 
+        checkpoint.Start(nowUtc);
         await database.SaveChangesAsync(cancellationToken);
         return checkpoint;
     }

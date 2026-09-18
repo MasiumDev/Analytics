@@ -16,9 +16,11 @@ as `DateTimeOffset` after normalization to UTC.
 and media counts. `MediaCurrentStats` is a one-to-one current projection for
 likes, comments, saves, shares, reach, and plays. Metrics are nullable because
 Meta does not return every metric for every account/media type, and non-null
-values cannot be negative. Both projections include capture time and rowversion
-for safe refreshes. Historical, append-only snapshots are intentionally
-separate from these current-value tables.
+values cannot be negative. Account statistics include capture time. Media
+statistics preserve both the provider's optional source timestamp and the
+server receipt timestamp. Both projections include rowversion for safe
+refreshes. Historical, append-only snapshots are intentionally separate from
+these current-value tables.
 
 The entity and table names describe the Instagram platform domain only; they do
 not contain the repository name or any candidate public product brand.
